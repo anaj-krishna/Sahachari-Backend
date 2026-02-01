@@ -4,6 +4,7 @@ import { CartService } from '../../cart/cart.service';
 import { OrdersService } from '../../orders/orders.service';
 import { AddToCartDto } from '../../cart/dto/add-to-cart.dto';
 import { PlaceOrderDto } from '../../orders/dto/place-order.dto';
+import { PlaceSingleOrderDto } from 'src/orders/dto/place-single-order.dto';
 export declare class CustomerController {
     private readonly productsService;
     private readonly cartService;
@@ -108,6 +109,16 @@ export declare class CustomerController {
         ordersCount: number;
         totalAmount: number;
         orders: import("../../orders/order.schema").OrderDocument[];
+    }>;
+    placeSingleProductOrder(req: any, dto: PlaceSingleOrderDto): Promise<{
+        message: string;
+        order: import("mongoose").Document<unknown, {}, import("../../orders/order.schema").OrderDocument, {}, import("mongoose").DefaultSchemaOptions> & import("../../orders/order.schema").Order & import("mongoose").Document<import("mongoose").Types.ObjectId, any, any, Record<string, any>, {}> & Required<{
+            _id: import("mongoose").Types.ObjectId;
+        }> & {
+            __v: number;
+        } & {
+            id: string;
+        };
     }>;
     getOrders(req: Request & {
         user: {

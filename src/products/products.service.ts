@@ -177,4 +177,21 @@ private toNumberPrice(price: string | number): number {
   return basePrice;
 }
 
+
+async removeSingleOffer(productId: string) {
+  const product = await this.productModel.findById(productId);
+  if (!product) throw new NotFoundException('Product not found');
+
+  if (!product.offers || product.offers.length === 0) {
+    throw new NotFoundException('No offers to delete');
+  }
+
+  // Remove the only offer (or the first one if multiple)
+  product.offers.splice(0, 1);
+  await product.save();
+
+  return product;
+}
+
+
 }

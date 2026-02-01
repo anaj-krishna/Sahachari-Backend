@@ -1,8 +1,8 @@
+/* eslint-disable prettier/prettier */
 import {
   IsString,
   IsOptional,
-  IsPhoneNumber,
-  MinLength,
+  MinLength
 } from 'class-validator';
 
 export class PlaceOrderDto {
@@ -19,7 +19,6 @@ export class PlaceOrderDto {
   zipCode: string;
 
   @IsString()
-  @IsPhoneNumber()
   phone: string;
 
   @IsOptional()

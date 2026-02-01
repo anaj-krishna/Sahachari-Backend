@@ -74,6 +74,7 @@ let Order = class Order {
     items;
     totalAmount;
     deliveryAddress;
+    pickupAddress;
     status;
 };
 exports.Order = Order;
@@ -105,6 +106,10 @@ __decorate([
     (0, mongoose_1.Prop)({ type: DeliveryAddressSchema, required: true }),
     __metadata("design:type", DeliveryAddress)
 ], Order.prototype, "deliveryAddress", void 0);
+__decorate([
+    (0, mongoose_1.Prop)({ type: Object }),
+    __metadata("design:type", Object)
+], Order.prototype, "pickupAddress", void 0);
 __decorate([
     (0, mongoose_1.Prop)({ default: 'PLACED' }),
     __metadata("design:type", String)

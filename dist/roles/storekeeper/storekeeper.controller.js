@@ -14,6 +14,7 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.StorekeeperController = void 0;
 const common_1 = require("@nestjs/common");
+const add_offer_dto_1 = require("../../products/dto/add-offer.dto");
 const jwt_auth_guard_1 = require("../../common/guards/jwt-auth.guard");
 const roles_guard_1 = require("../../common/guards/roles.guard");
 const roles_decorator_1 = require("../../common/decorators/roles.decorator");
@@ -44,6 +45,12 @@ let StorekeeperController = class StorekeeperController {
     }
     deleteProduct(req, productId) {
         return this.productsService.deleteProduct(req.user.userId, productId);
+    }
+    addOfferToProduct(productId, dto) {
+        return this.productsService.addOffer(productId, dto);
+    }
+    deleteSingleOffer(productId) {
+        return this.productsService.removeSingleOffer(productId);
     }
     updateStock(req, productId, dto) {
         return this.productsService.updateStock(req.user.userId, productId, dto.quantity);
@@ -108,6 +115,21 @@ __decorate([
     __metadata("design:paramtypes", [Object, String]),
     __metadata("design:returntype", void 0)
 ], StorekeeperController.prototype, "deleteProduct", null);
+__decorate([
+    (0, common_1.Post)('products/:id/offer'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, add_offer_dto_1.AddOfferDto]),
+    __metadata("design:returntype", void 0)
+], StorekeeperController.prototype, "addOfferToProduct", null);
+__decorate([
+    (0, common_1.Delete)('products/:id/offer'),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], StorekeeperController.prototype, "deleteSingleOffer", null);
 __decorate([
     (0, common_1.Patch)('products/:id/stock'),
     __param(0, (0, common_1.Req)()),

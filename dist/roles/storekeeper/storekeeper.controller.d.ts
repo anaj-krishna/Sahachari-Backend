@@ -1,4 +1,5 @@
 import { Request } from 'express';
+import { AddOfferDto } from '../../products/dto/add-offer.dto';
 import { ProductsService } from '../../products/products.service';
 import { OrdersService } from '../../orders/orders.service';
 import { CreateProductDto } from '../../products/dto/create-product.dto';
@@ -68,6 +69,20 @@ export declare class StorekeeperController {
         };
     }, productId: string): Promise<{
         message: string;
+    }>;
+    addOfferToProduct(productId: string, dto: AddOfferDto): Promise<import("mongoose").Document<unknown, {}, import("../../products/product.schema").ProductDocument, {}, import("mongoose").DefaultSchemaOptions> & import("../../products/product.schema").Product & import("mongoose").Document<import("mongoose").Types.ObjectId, any, any, Record<string, any>, {}> & Required<{
+        _id: import("mongoose").Types.ObjectId;
+    }> & {
+        __v: number;
+    } & {
+        id: string;
+    }>;
+    deleteSingleOffer(productId: string): Promise<import("mongoose").Document<unknown, {}, import("../../products/product.schema").ProductDocument, {}, import("mongoose").DefaultSchemaOptions> & import("../../products/product.schema").Product & import("mongoose").Document<import("mongoose").Types.ObjectId, any, any, Record<string, any>, {}> & Required<{
+        _id: import("mongoose").Types.ObjectId;
+    }> & {
+        __v: number;
+    } & {
+        id: string;
     }>;
     updateStock(req: Request & {
         user: {
