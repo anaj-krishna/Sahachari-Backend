@@ -294,7 +294,7 @@ async placeSingleOrder(userId: string, dto: PlaceSingleOrderDto) {
       {
         _id: orderId,
         storeId: new Types.ObjectId(storeId),
-        status: 'ACCEPTED',
+        status: 'PLACED',
       },
       {
         $set: { status: 'READY' },
