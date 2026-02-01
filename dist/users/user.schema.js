@@ -26,6 +26,7 @@ let User = class User {
     storeId;
     address2;
     mobileNumber;
+    image;
 };
 exports.User = User;
 __decorate([
@@ -75,6 +76,10 @@ __decorate([
     (0, mongoose_1.Prop)({ required: false }),
     __metadata("design:type", String)
 ], User.prototype, "mobileNumber", void 0);
+__decorate([
+    (0, mongoose_1.Prop)({ required: false }),
+    __metadata("design:type", String)
+], User.prototype, "image", void 0);
 exports.User = User = __decorate([
     (0, mongoose_1.Schema)({ timestamps: true })
 ], User);
