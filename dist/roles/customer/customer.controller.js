@@ -23,6 +23,7 @@ const cart_service_1 = require("../../cart/cart.service");
 const orders_service_1 = require("../../orders/orders.service");
 const add_to_cart_dto_1 = require("../../cart/dto/add-to-cart.dto");
 const place_order_dto_1 = require("../../orders/dto/place-order.dto");
+const place_single_order_dto_1 = require("../../orders/dto/place-single-order.dto");
 let CustomerController = class CustomerController {
     productsService;
     cartService;
@@ -55,6 +56,9 @@ let CustomerController = class CustomerController {
     }
     placeOrder(req, dto) {
         return this.ordersService.placeOrder(req.user.userId, dto);
+    }
+    placeSingleProductOrder(req, dto) {
+        return this.ordersService.placeSingleOrder(req.user.userId, dto);
     }
     getOrders(req) {
         return this.ordersService.getOrders(req.user.userId);
@@ -126,6 +130,14 @@ __decorate([
     __metadata("design:paramtypes", [Object, place_order_dto_1.PlaceOrderDto]),
     __metadata("design:returntype", void 0)
 ], CustomerController.prototype, "placeOrder", null);
+__decorate([
+    (0, common_1.Post)('single-order'),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, place_single_order_dto_1.PlaceSingleOrderDto]),
+    __metadata("design:returntype", void 0)
+], CustomerController.prototype, "placeSingleProductOrder", null);
 __decorate([
     (0, common_1.Get)('orders'),
     __param(0, (0, common_1.Req)()),

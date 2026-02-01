@@ -127,6 +127,17 @@ let ProductsService = class ProductsService {
         }
         return basePrice;
     }
+    async removeSingleOffer(productId) {
+        const product = await this.productModel.findById(productId);
+        if (!product)
+            throw new common_1.NotFoundException('Product not found');
+        if (!product.offers || product.offers.length === 0) {
+            throw new common_1.NotFoundException('No offers to delete');
+        }
+        product.offers.splice(0, 1);
+        await product.save();
+        return product;
+    }
 };
 exports.ProductsService = ProductsService;
 exports.ProductsService = ProductsService = __decorate([

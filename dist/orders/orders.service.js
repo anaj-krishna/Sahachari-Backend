@@ -19,13 +19,16 @@ const mongoose_2 = require("mongoose");
 const order_schema_1 = require("./order.schema");
 const cart_service_1 = require("../cart/cart.service");
 const product_schema_1 = require("../products/product.schema");
+const users_service_1 = require("../users/users.service");
 let OrdersService = class OrdersService {
     orderModel;
     cartService;
+    usersService;
     productModel;
-    constructor(orderModel, cartService, productModel) {
+    constructor(orderModel, cartService, usersService, productModel) {
         this.orderModel = orderModel;
         this.cartService = cartService;
+        this.usersService = usersService;
         this.productModel = productModel;
     }
     async placeOrder(userId, dto) {
@@ -33,19 +36,25 @@ let OrdersService = class OrdersService {
         if (!cart || cart.items.length === 0) {
             throw new common_1.BadRequestException('Cart is empty');
         }
-        const checkoutId = `CHECKOUT-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        const checkoutId = `CHECKOUT-${Date.now()}-${Math.random()
+            .toString(36)
+            .substr(2, 9)}`;
         const itemsByStore = new Map();
         for (const item of cart.items) {
             const storeId = item.storeId.toString();
             if (!itemsByStore.has(storeId)) {
                 itemsByStore.set(storeId, []);
             }
-            itemsByStore.get(storeId)?.push(item);
+            itemsByStore.get(storeId).push(item);
         }
         const createdOrders = [];
         for (const [storeId, items] of itemsByStore.entries()) {
             let storeTotal = 0;
             const orderItems = [];
+            const storeUser = await this.usersService.getById(storeId);
+            if (!storeUser) {
+                throw new common_1.NotFoundException(`Store/Admin user ${storeId} not found`);
+            }
             for (const item of items) {
                 const product = await this.productModel.findById(item.productId);
                 if (!product) {
@@ -66,6 +75,7 @@ let OrdersService = class OrdersService {
                 items: orderItems,
                 totalAmount: storeTotal,
                 deliveryAddress: dto,
+                pickupAddress: storeUser.address,
                 status: 'PLACED',
             });
             createdOrders.push(order);
@@ -76,6 +86,43 @@ let OrdersService = class OrdersService {
             ordersCount: createdOrders.length,
             totalAmount: createdOrders.reduce((sum, order) => sum + order.totalAmount, 0),
             orders: createdOrders,
+        };
+    }
+    async placeSingleOrder(userId, dto) {
+        const { productId, quantity, deliveryAddress } = dto;
+        if (quantity <= 0) {
+            throw new common_1.BadRequestException('Quantity must be greater than 0');
+        }
+        const product = await this.productModel.findById(productId);
+        if (!product) {
+            throw new common_1.NotFoundException(`Product ${productId} not found`);
+        }
+        const numericPrice = Number(String(product.price).replace(/[^0-9.]/g, ''));
+        const totalAmount = numericPrice * quantity;
+        const storeId = product.storeId.toString();
+        const storeUser = await this.usersService.getById(storeId);
+        if (!storeUser) {
+            throw new common_1.NotFoundException(`Store/Admin user ${storeId} not found`);
+        }
+        const order = await this.orderModel.create({
+            userId: new mongoose_2.Types.ObjectId(userId),
+            storeId: new mongoose_2.Types.ObjectId(storeId),
+            checkoutId: `SINGLE-${Date.now()}`,
+            items: [
+                {
+                    productId: product._id,
+                    quantity,
+                    price: numericPrice,
+                },
+            ],
+            totalAmount,
+            deliveryAddress,
+            pickupAddress: storeUser.address,
+            status: 'PLACED',
+        });
+        return {
+            message: 'Order placed successfully',
+            order,
         };
     }
     async getOrders(userId, checkoutId) {
@@ -294,9 +341,10 @@ exports.OrdersService = OrdersService;
 exports.OrdersService = OrdersService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, mongoose_1.InjectModel)(order_schema_1.Order.name)),
-    __param(2, (0, mongoose_1.InjectModel)(product_schema_1.Product.name)),
+    __param(3, (0, mongoose_1.InjectModel)(product_schema_1.Product.name)),
     __metadata("design:paramtypes", [mongoose_2.Model,
         cart_service_1.CartService,
+        users_service_1.UsersService,
         mongoose_2.Model])
 ], OrdersService);
 //# sourceMappingURL=orders.service.js.map

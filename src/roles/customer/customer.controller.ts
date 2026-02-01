@@ -1,3 +1,8 @@
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable prettier/prettier */
+/* eslint-disable @typescript-eslint/no-unsafe-return */
 import {
   Controller,
   Get,
@@ -22,6 +27,7 @@ import { OrdersService } from '../../orders/orders.service';
 
 import { AddToCartDto } from '../../cart/dto/add-to-cart.dto';
 import { PlaceOrderDto } from '../../orders/dto/place-order.dto';
+import { PlaceSingleOrderDto } from 'src/orders/dto/place-single-order.dto';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(Role.USER)
@@ -90,6 +96,14 @@ export class CustomerController {
   ) {
     return this.ordersService.placeOrder(req.user.userId, dto);
   }
+
+@Post('single-order')
+placeSingleProductOrder(
+  @Req() req,
+  @Body() dto: PlaceSingleOrderDto,
+) {
+  return this.ordersService.placeSingleOrder(req.user.userId, dto);
+}
 
   @Get('orders')
   getOrders(@Req() req: Request & { user: { userId: string } }) {

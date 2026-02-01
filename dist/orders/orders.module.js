@@ -13,6 +13,7 @@ const orders_service_1 = require("./orders.service");
 const order_schema_1 = require("./order.schema");
 const cart_module_1 = require("../cart/cart.module");
 const product_schema_1 = require("../products/product.schema");
+const users_module_1 = require("../users/users.module");
 let OrdersModule = class OrdersModule {
 };
 exports.OrdersModule = OrdersModule;
@@ -24,6 +25,7 @@ exports.OrdersModule = OrdersModule = __decorate([
                 { name: product_schema_1.Product.name, schema: product_schema_1.ProductSchema },
             ]),
             cart_module_1.CartModule,
+            users_module_1.UsersModule
         ],
         providers: [orders_service_1.OrdersService],
         exports: [orders_service_1.OrdersService],

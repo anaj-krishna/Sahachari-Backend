@@ -3,16 +3,29 @@ import { Order, OrderDocument } from './order.schema';
 import { CartService } from '../cart/cart.service';
 import { ProductDocument } from '../products/product.schema';
 import { PlaceOrderDto } from './dto/place-order.dto';
+import { UsersService } from '../users/users.service';
+import { PlaceSingleOrderDto } from './dto/place-single-order.dto';
 export declare class OrdersService {
     private readonly orderModel;
     private readonly cartService;
+    private readonly usersService;
     private readonly productModel;
-    constructor(orderModel: Model<OrderDocument>, cartService: CartService, productModel: Model<ProductDocument>);
+    constructor(orderModel: Model<OrderDocument>, cartService: CartService, usersService: UsersService, productModel: Model<ProductDocument>);
     placeOrder(userId: string, dto: PlaceOrderDto): Promise<{
         checkoutId: string;
         ordersCount: number;
         totalAmount: number;
         orders: OrderDocument[];
+    }>;
+    placeSingleOrder(userId: string, dto: PlaceSingleOrderDto): Promise<{
+        message: string;
+        order: import("mongoose").Document<unknown, {}, OrderDocument, {}, import("mongoose").DefaultSchemaOptions> & Order & import("mongoose").Document<Types.ObjectId, any, any, Record<string, any>, {}> & Required<{
+            _id: Types.ObjectId;
+        }> & {
+            __v: number;
+        } & {
+            id: string;
+        };
     }>;
     getOrders(userId: string, checkoutId?: string): Promise<(import("mongoose").Document<unknown, {}, OrderDocument, {}, import("mongoose").DefaultSchemaOptions> & Order & import("mongoose").Document<Types.ObjectId, any, any, Record<string, any>, {}> & Required<{
         _id: Types.ObjectId;

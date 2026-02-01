@@ -60,6 +60,9 @@ export class Order {
   @Prop({ type: DeliveryAddressSchema, required: true })
   deliveryAddress: DeliveryAddress;
 
+  @Prop({ type: Object })
+  pickupAddress: any;
+
   @Prop({ default: 'PLACED' })
   status:
     | 'PLACED'
