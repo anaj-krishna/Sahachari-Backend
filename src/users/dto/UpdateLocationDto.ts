@@ -15,6 +15,10 @@ export class UpdateLocationDto {
   mobileNumber?: string;
 
   @IsOptional()
+  @IsString() // You can use @IsMobilePhone() for stricter validation
+  image?: string;
+
+  @IsOptional()
   @IsArray()
   @IsString({ each: true })
   serviceablePincodes?: string[];

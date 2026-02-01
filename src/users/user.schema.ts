@@ -42,6 +42,9 @@ export class User {
 
   @Prop({ required: false }) // Optional
   mobileNumber?: string;
+
+  @Prop({ required: false }) // Optional
+  image?: string;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
