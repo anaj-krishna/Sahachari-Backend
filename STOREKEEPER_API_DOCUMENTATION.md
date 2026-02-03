@@ -94,7 +94,7 @@ Content-Type: application/json
 {
   "name": "Laptop Pro",
   "description": "High-performance laptop with 16GB RAM",
-  "price": 50000,
+  "price": "50000",
   "quantity": 10,
   "category": "Electronics",
   "images": ["img1.jpg", "img2.jpg"]
@@ -120,7 +120,7 @@ Content-Type: application/json
 
 **Validation:**
 - `name`: Required, string
-- `price`: Required, number
+- `price`: Required, string
 - `quantity`: Required, number
 - `description`: Optional, string
 - `category`: Optional, string
@@ -573,7 +573,7 @@ POST /storekeeper/orders/65f4a3c9d1e2f3g4h5i6j7k8/ready
 ```
 
 **Precondition:**
-- Order status must be `ACCEPTED`
+- Order status must be `PLACED`
 
 **Response:** `200 OK`
 ```json
@@ -588,7 +588,7 @@ POST /storekeeper/orders/65f4a3c9d1e2f3g4h5i6j7k8/ready
 ```json
 {
   "statusCode": 404,
-  "message": "Order not found or not in ACCEPTED status"
+  "message": "Order not found or not in PLACED status"
 }
 ```
 
@@ -637,54 +637,8 @@ GET /storekeeper/orders/65f4a3c9d1e2f3g4h5i6j7k8/available-delivery
 
 ---
 
-### 2. Assign Delivery Boy
-**Endpoint:** `POST /storekeeper/orders/:id/assign-delivery`
-
-**Headers:**
-```
-Authorization: Bearer YOUR_JWT_TOKEN
-Content-Type: application/json
-```
-
-**URL Parameters:**
-- `id`: Order MongoDB ID
-
-**Body:**
-```json
-{
-  "deliveryBoyId": "delivery_boy_id_123"
-}
-```
-
-**Example:**
-```
-POST /storekeeper/orders/65f4a3c9d1e2f3g4h5i6j7k8/assign-delivery
-```
-
-**Precondition:**
-- Order status must be `READY`
-- Delivery boy must be available
-
-**Response:** `200 OK`
-```json
-{
-  "_id": "65f4a3c9d1e2f3g4h5i6j7k8",
-  "status": "READY",
-  "deliveryBoyId": "delivery_boy_id_123",
-  "updatedAt": "2025-01-19T10:15:00.000Z"
-}
-```
-
-**Validation:**
-- `deliveryBoyId`: Required, valid MongoDB ID
-
-**Error Responses:**
-```json
-{
-  "statusCode": 404,
-  "message": "Order not found or not in READY status"
-}
-```
+### 2. Assign Delivery Boy (Not Implemented)
+This endpoint is not implemented in the current codebase. Storekeeper can list available delivery partners, but assigning a delivery partner to an order is pending implementation.
 
 ---
 
@@ -715,7 +669,7 @@ All protected storekeeper endpoints require:
 Authorization: Bearer <jwt_token>
 ```
 
-**Required Role:** `ADMIN` or `STOREKEEPER`
+**Required Role:** `ADMIN`
 
 ---
 

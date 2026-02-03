@@ -447,6 +447,7 @@ Content-Type: application/json
         "phone": "+1-234-567-8900",
         "notes": "Please deliver after 5 PM"
       },
+      "pickupAddress": "Store Address, City",
       "status": "PLACED",
       "createdAt": "2025-01-19T10:00:00.000Z",
       "updatedAt": "2025-01-19T10:00:00.000Z"
@@ -472,6 +473,7 @@ Content-Type: application/json
         "phone": "+1-234-567-8900",
         "notes": "Please deliver after 5 PM"
       },
+      "pickupAddress": "Store Address, City",
       "status": "PLACED",
       "createdAt": "2025-01-19T10:00:00.000Z",
       "updatedAt": "2025-01-19T10:00:00.000Z"
@@ -710,7 +712,7 @@ POST /customer/orders/65f4a3c9d1e2f3g4h5i6j7k8/cancel
 
 **Restrictions:**
 - ❌ Cannot cancel if status is `DELIVERED`
-- ✅ Can cancel only if status is `PLACED`
+- ✅ Can cancel if order is not `DELIVERED`
 
 **Error Responses:**
 ```json
