@@ -1,6 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable prettier/prettier */
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { UsersService } from '../users/users.service';
@@ -23,38 +20,35 @@ export class AuthService {
   // SINGLE REGISTRATION
   //-----------------------------------------------------------------------------------
   async register(dto: RegisterDto) {
-  const existing = await this.usersService.findByEmail(dto.email);
-  if (existing) {
-    throw new UnauthorizedException('Email already in use');
+    const existing = await this.usersService.findByEmail(dto.email);
+    if (existing) {
+      throw new UnauthorizedException('Email already in use');
+    }
+
+    const status =
+      dto.role === Role.USER ? AccountStatus.ACTIVE : AccountStatus.PENDING;
+
+    const user = await this.usersService.createUser({
+      name: dto.name,
+      email: dto.email,
+      password: dto.password,
+      role: dto.role,
+      status,
+      address: dto.address,
+      serviceablePincodes: dto.serviceablePincodes,
+    });
+
+    return {
+      id: user._id.toString(),
+      email: user.email,
+      role: user.role,
+      status: user.status,
+      message:
+        dto.role === Role.USER
+          ? 'Registration successful'
+          : 'Registration successful. Awaiting admin approval.',
+    };
   }
-
-  const status =
-    dto.role === Role.USER
-      ? AccountStatus.ACTIVE
-      : AccountStatus.PENDING;
-
-  const user = await this.usersService.createUser({
-    name: dto.name,
-    email: dto.email,
-    password: dto.password,
-    role: dto.role,
-    status,
-    address: dto.address,
-    serviceablePincodes: dto.serviceablePincodes,
-  });
-
-  return {
-    id: user._id.toString(),
-    email: user.email,
-    role: user.role,
-    status: user.status,
-    message:
-      dto.role === Role.USER
-        ? 'Registration successful'
-        : 'Registration successful. Awaiting admin approval.',
-  };
-}
-
 
   //-----------------------------------------------------------------------------------
   // LOGIN

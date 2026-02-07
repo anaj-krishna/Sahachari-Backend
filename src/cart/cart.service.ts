@@ -99,4 +99,26 @@ export class CartService {
     cart.items = [];
     await cart.save();
   }
+  async updateQuantity(userId: string, itemId: string, quantity: number) {
+    if (!userId) throw new BadRequestException('userId missing');
+
+    const userObjectId = new Types.ObjectId(userId);
+
+    const cart = await this.cartModel.findOne({ userId: userObjectId });
+    if (!cart) throw new NotFoundException('Cart not found');
+
+    const item = cart.items.find((i) => i._id && i._id.toString() === itemId);
+    if (!item) throw new NotFoundException('Item not found');
+
+    if (quantity <= 0) {
+      cart.items = cart.items.filter(
+        (i) => !(i._id && i._id.toString() === itemId),
+      );
+    } else {
+      item.quantity = quantity;
+    }
+
+    await cart.save();
+    return cart;
+  }
 }

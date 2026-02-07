@@ -4,7 +4,7 @@ import { Request } from 'express';
 import { ROLES_KEY } from '../decorators/roles.decorator';
 import { Role } from '../enums/role.enum';
 import { AccountStatus } from '../enums/account-status.enum';
-
+// “Is this logged-in user allowed to access this API or not?”
 interface JwtUser {
   role: Role;
   status: AccountStatus;
@@ -24,11 +24,7 @@ export class RolesGuard implements CanActivate {
     const user = request.user as JwtUser;
 
     if (!user) return false;
-
-    // 🔒 Block unapproved accounts
     if (user.status !== AccountStatus.ACTIVE) return false;
-
-    // If no role required, just being ACTIVE is enough
     if (!requiredRoles || requiredRoles.length === 0) return true;
 
     return requiredRoles.includes(user.role);

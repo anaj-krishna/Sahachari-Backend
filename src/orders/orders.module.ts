@@ -14,7 +14,7 @@ import { UsersModule } from 'src/users/users.module';
       { name: Product.name, schema: ProductSchema },
     ]),
     CartModule, // needed to clear cart after placing order
-    UsersModule
+    UsersModule,
   ],
   providers: [OrdersService],
   exports: [OrdersService],

@@ -1,9 +1,5 @@
 /* eslint-disable prettier/prettier */
-import {
-  IsString,
-  IsOptional,
-  MinLength
-} from 'class-validator';
+import { IsString, IsOptional, MinLength } from 'class-validator';
 
 export class PlaceOrderDto {
   @IsString()

@@ -143,55 +143,51 @@ export class ProductsService {
   }
 
   /* ================= HELPERS ================= */
-private toNumberPrice(price: string | number): number {
-  return Number(String(price || '').replace(/[^0-9.]/g, '')) || 0;
-}
+  private toNumberPrice(price: string | number): number {
+    return Number(String(price || '').replace(/[^0-9.]/g, '')) || 0;
+  }
 
+  private calculateFinalPrice(product: LeanProduct): number {
+    const basePrice = this.toNumberPrice(product.price);
 
- private calculateFinalPrice(product: LeanProduct): number {
-  const basePrice = this.toNumberPrice(product.price);
+    if (!product.offers || product.offers.length === 0) {
+      return basePrice;
+    }
 
-  if (!product.offers || product.offers.length === 0) {
+    const now = new Date();
+
+    const activeOffer = product.offers.find(
+      (offer) =>
+        offer.isActive &&
+        (!offer.startDate || offer.startDate <= now) &&
+        (!offer.endDate || offer.endDate >= now),
+    );
+
+    if (!activeOffer) return basePrice;
+
+    if (activeOffer.type === DiscountType.PERCENTAGE) {
+      return Math.max(basePrice - (basePrice * activeOffer.value) / 100, 0);
+    }
+
+    if (activeOffer.type === DiscountType.FLAT) {
+      return Math.max(basePrice - activeOffer.value, 0);
+    }
+
     return basePrice;
   }
 
-  const now = new Date();
+  async removeSingleOffer(productId: string) {
+    const product = await this.productModel.findById(productId);
+    if (!product) throw new NotFoundException('Product not found');
 
-  const activeOffer = product.offers.find(
-    (offer) =>
-      offer.isActive &&
-      (!offer.startDate || offer.startDate <= now) &&
-      (!offer.endDate || offer.endDate >= now),
-  );
+    if (!product.offers || product.offers.length === 0) {
+      throw new NotFoundException('No offers to delete');
+    }
 
-  if (!activeOffer) return basePrice;
+    // Remove the only offer (or the first one if multiple)
+    product.offers.splice(0, 1);
+    await product.save();
 
-  if (activeOffer.type === DiscountType.PERCENTAGE) {
-    return Math.max(basePrice - (basePrice * activeOffer.value) / 100, 0);
+    return product;
   }
-
-  if (activeOffer.type === DiscountType.FLAT) {
-    return Math.max(basePrice - activeOffer.value, 0);
-  }
-
-  return basePrice;
-}
-
-
-async removeSingleOffer(productId: string) {
-  const product = await this.productModel.findById(productId);
-  if (!product) throw new NotFoundException('Product not found');
-
-  if (!product.offers || product.offers.length === 0) {
-    throw new NotFoundException('No offers to delete');
-  }
-
-  // Remove the only offer (or the first one if multiple)
-  product.offers.splice(0, 1);
-  await product.save();
-
-  return product;
-}
-
-
 }

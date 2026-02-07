@@ -41,4 +41,4 @@ export class RegisterDto {
   @IsOptional()
   @IsString()
   mobileNumber?: string;
-} 
+}

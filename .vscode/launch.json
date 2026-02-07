@@ -1,20 +1,17 @@
 {
   "version": "0.2.0",
   "configurations": [
+    
     {
-      "name": "Debug NestJS",
       "type": "node",
       "request": "launch",
-      "args": ["${workspaceFolder}/src/main.ts"],
-      "runtimeArgs": ["-r", "ts-node/register", "-r", "tsconfig-paths/register"],
-      "sourceMaps": true,
-      "cwd": "${workspaceFolder}",
-      "protocol": "inspector",
-      "restart": true,
+      "name": "NestJS Debug",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "start:debug"],
+      "restart": true,  
       "console": "integratedTerminal",
-      "env": {
-        "TS_NODE_PROJECT": "tsconfig.json"
-      }
+      "autoAttachChildProcesses": true,
+      "skipFiles": ["<node_internals>/**"]
     }
   ]
 }
