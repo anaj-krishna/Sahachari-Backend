@@ -80,18 +80,14 @@ export class StorekeeperController {
 
   /* ================= OFFERS ================= */
 
-@Post('products/:id/offer')
-addOfferToProduct(
-  @Param('id') productId: string,
-  @Body() dto: AddOfferDto,
-) {
-  return this.productsService.addOffer(productId, dto);
-}
-@Delete('products/:id/offer')
-deleteSingleOffer(@Param('id') productId: string) {
-  return this.productsService.removeSingleOffer(productId);
-}
-
+  @Post('products/:id/offer')
+  addOfferToProduct(@Param('id') productId: string, @Body() dto: AddOfferDto) {
+    return this.productsService.addOffer(productId, dto);
+  }
+  @Delete('products/:id/offer')
+  deleteSingleOffer(@Param('id') productId: string) {
+    return this.productsService.removeSingleOffer(productId);
+  }
 
   @Patch('products/:id/stock')
   updateStock(

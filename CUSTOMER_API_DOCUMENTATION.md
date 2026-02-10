@@ -12,7 +12,7 @@
 ## Authentication
 
 ### 1. Register (Customer)
-**Endpoint:** `POST /auth/register/customer`
+**Endpoint:** `POST /auth/register`
 
 **Headers:**
 ```
@@ -24,19 +24,21 @@ Content-Type: application/json
 {
   "name": "John Doe",
   "email": "john@example.com",
-  "password": "password123"
+  "password": "password123",
+  "role": "USER",
+  "address": "123 Main Street, New York",
+  "serviceablePincodes": ["10001", "10002"]
 }
 ```
 
 **Response:** `201 Created`
 ```json
 {
-  "user": {
-    "userId": "user_id_123",
-    "email": "john@example.com",
-    "name": "John Doe",
-    "role": "USER"
-  }
+  "id": "65f4a3c9d1e2f3g4h5i6j7k8",
+  "email": "john@example.com",
+  "role": "USER",
+  "status": "ACTIVE",
+  "message": "Registration successful"
 }
 ```
 
@@ -44,6 +46,9 @@ Content-Type: application/json
 - `name`: Required, string
 - `email`: Required, valid email format
 - `password`: Required, minimum 6 characters
+- `role`: Required, one of [USER, DELIVERY, ADMIN]
+- `address`: Required, string
+- `serviceablePincodes`: Required, non-empty array of strings
 
 ---
 
@@ -66,13 +71,7 @@ Content-Type: application/json
 **Response:** `200 OK`
 ```json
 {
-  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "user": {
-    "userId": "user_id_123",
-    "email": "john@example.com",
-    "name": "John Doe",
-    "role": "USER"
-  }
+  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 }
 ```
 
@@ -448,6 +447,7 @@ Content-Type: application/json
         "phone": "+1-234-567-8900",
         "notes": "Please deliver after 5 PM"
       },
+      "pickupAddress": "Store Address, City",
       "status": "PLACED",
       "createdAt": "2025-01-19T10:00:00.000Z",
       "updatedAt": "2025-01-19T10:00:00.000Z"
@@ -473,6 +473,7 @@ Content-Type: application/json
         "phone": "+1-234-567-8900",
         "notes": "Please deliver after 5 PM"
       },
+      "pickupAddress": "Store Address, City",
       "status": "PLACED",
       "createdAt": "2025-01-19T10:00:00.000Z",
       "updatedAt": "2025-01-19T10:00:00.000Z"
@@ -502,6 +503,76 @@ Content-Type: application/json
   "message": "Cart is empty"
 }
 ```
+
+---
+
+### 2. Place Single Product Order
+**Endpoint:** `POST /customer/single-order`
+
+**Headers:**
+```
+Authorization: Bearer YOUR_JWT_TOKEN
+Content-Type: application/json
+```
+
+**Body:**
+```json
+{
+  "productId": "65f4a3c9d1e2f3g4h5i6j7k8",
+  "quantity": 1,
+  "deliveryAddress": {
+    "street": "123 Main Street",
+    "city": "New York",
+    "zipCode": "10001",
+    "phone": "+1-234-567-8900",
+    "notes": "Leave at door"
+  }
+}
+```
+
+**Response:** `201 Created` (or `200 OK` depending on server)
+```json
+{
+  "message": "Order placed successfully",
+  "order": {
+    "_id": "order_123",
+    "userId": "user_id_123",
+    "storeId": "store_1",
+    "checkoutId": "SINGLE-1705684920123",
+    "items": [
+      {
+        "_id": "order_item_1",
+        "productId": "65f4a3c9d1e2f3g4h5i6j7k8",
+        "quantity": 1,
+        "price": 50000
+      }
+    ],
+    "totalAmount": 50000,
+    "deliveryAddress": {
+      "street": "123 Main Street",
+      "city": "New York",
+      "zipCode": "10001",
+      "phone": "+1-234-567-8900",
+      "notes": "Leave at door"
+    },
+    "pickupAddress": {
+      "street": "Store Street",
+      "city": "Store City"
+    },
+    "status": "PLACED",
+    "createdAt": "2025-01-19T10:00:00.000Z"
+  }
+}
+```
+
+**Validation:**
+- `productId`: Required, valid MongoDB ID
+- `quantity`: Required, integer, minimum 1
+- `deliveryAddress`: Required, same fields as `PlaceOrderDto`
+
+**Errors:**
+- `400` Quantity must be greater than 0
+- `404` Product not found
 
 ---
 
@@ -641,7 +712,7 @@ POST /customer/orders/65f4a3c9d1e2f3g4h5i6j7k8/cancel
 
 **Restrictions:**
 - ❌ Cannot cancel if status is `DELIVERED`
-- ✅ Can cancel only if status is `PLACED`
+- ✅ Can cancel if order is not `DELIVERED`
 
 **Error Responses:**
 ```json

@@ -91,6 +91,25 @@ let CartService = class CartService {
         cart.items = [];
         await cart.save();
     }
+    async updateQuantity(userId, itemId, quantity) {
+        if (!userId)
+            throw new common_1.BadRequestException('userId missing');
+        const userObjectId = new mongoose_2.Types.ObjectId(userId);
+        const cart = await this.cartModel.findOne({ userId: userObjectId });
+        if (!cart)
+            throw new common_1.NotFoundException('Cart not found');
+        const item = cart.items.find((i) => i._id && i._id.toString() === itemId);
+        if (!item)
+            throw new common_1.NotFoundException('Item not found');
+        if (quantity <= 0) {
+            cart.items = cart.items.filter((i) => !(i._id && i._id.toString() === itemId));
+        }
+        else {
+            item.quantity = quantity;
+        }
+        await cart.save();
+        return cart;
+    }
 };
 exports.CartService = CartService;
 exports.CartService = CartService = __decorate([

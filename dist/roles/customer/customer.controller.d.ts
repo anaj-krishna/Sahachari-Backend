@@ -153,4 +153,11 @@ export declare class CustomerController {
     } & {
         id: string;
     }>;
+    updateCartItemQuantity(req: any, itemId: string, quantity: number): Promise<import("mongoose").Document<unknown, {}, import("../../cart/cart.schema").CartDocument, {}, import("mongoose").DefaultSchemaOptions> & import("../../cart/cart.schema").Cart & import("mongoose").Document<import("mongoose").Types.ObjectId, any, any, Record<string, any>, {}> & Required<{
+        _id: import("mongoose").Types.ObjectId;
+    }> & {
+        __v: number;
+    } & {
+        id: string;
+    }>;
 }

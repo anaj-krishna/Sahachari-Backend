@@ -12,7 +12,7 @@
 ## 🔐 Authentication
 
 ### Admin Registration
-**Endpoint:** `POST http://localhost:3000/auth/register/storekeeper`
+**Endpoint:** `POST /auth/register`
 
 **Headers:**
 ```
@@ -25,7 +25,9 @@ Content-Type: application/json
   "name": "ABCG",
   "email": "abc@store.com",
   "password": "123456",
-  "role": "ADMIN"
+  "role": "ADMIN",
+  "address": "Store Address, City",
+  "serviceablePincodes": ["560001", "560002"]
 }
 ```
 
@@ -35,7 +37,8 @@ Content-Type: application/json
   "id": "696dc7c4d941d2c9a8f56e4d",
   "email": "abc@store.com",
   "role": "ADMIN",
-  "status": "PENDING"
+  "status": "PENDING",
+  "message": "Registration successful. Awaiting admin approval."
 }
 ```
 
@@ -44,9 +47,34 @@ Content-Type: application/json
 - `email`: Required, valid email format
 - `password`: Required, string (minimum 6 characters)
 - `role`: Required, must be "ADMIN" for storekeeper registration
+ - `address`: Required, string
+ - `serviceablePincodes`: Required, non-empty array of strings
 
 **Status Description:**
 - `PENDING`: Account created but awaiting superadmin approval
+
+### Login
+**Endpoint:** `POST /auth/login`
+
+**Headers:**
+```
+Content-Type: application/json
+```
+
+**Body:**
+```json
+{
+  "email": "abc@store.com",
+  "password": "123456"
+}
+```
+
+**Response:** `200 OK`
+```json
+{
+  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+}
+```
 
 ---
 
@@ -66,7 +94,7 @@ Content-Type: application/json
 {
   "name": "Laptop Pro",
   "description": "High-performance laptop with 16GB RAM",
-  "price": 50000,
+  "price": "50000",
   "quantity": 10,
   "category": "Electronics",
   "images": ["img1.jpg", "img2.jpg"]
@@ -92,7 +120,7 @@ Content-Type: application/json
 
 **Validation:**
 - `name`: Required, string
-- `price`: Required, number
+- `price`: Required, string
 - `quantity`: Required, number
 - `description`: Optional, string
 - `category`: Optional, string
@@ -231,6 +259,84 @@ DELETE /storekeeper/products/65f4a3c9d1e2f3g4h5i6j7k8
   "message": "Product deleted successfully"
 }
 ```
+
+---
+
+## Offers
+
+### 1. Add Offer to Product
+**Endpoint:** `POST /storekeeper/products/:id/offer`
+
+**Headers:**
+```
+Authorization: Bearer YOUR_JWT_TOKEN
+Content-Type: application/json
+```
+
+**URL Parameters:**
+- `id`: Product MongoDB ID
+
+**Body:**
+```json
+{
+  "type": "PERCENTAGE", // or "FLAT"
+  "value": 10,
+  "startDate": "2025-01-01T00:00:00.000Z", // optional
+  "endDate": "2025-12-31T23:59:59.000Z" // optional
+}
+```
+
+**Response:** `200 OK`
+```json
+{
+  "_id": "prod_1",
+  "storeId": "store_id_123",
+  "name": "Laptop Pro",
+  "price": 50000,
+  "quantity": 10,
+  "offers": [
+    {
+      "type": "PERCENTAGE",
+      "value": 10,
+      "isActive": true,
+      "startDate": "2025-01-01T00:00:00.000Z",
+      "endDate": "2025-12-31T23:59:59.000Z"
+    }
+  ]
+}
+```
+
+**Validation:**
+- `type`: Required, `PERCENTAGE` or `FLAT`
+- `value`: Required, number
+
+**Errors:**
+- `404` Product not found
+
+---
+
+### 2. Delete Single Offer
+**Endpoint:** `DELETE /storekeeper/products/:id/offer`
+
+**Headers:**
+```
+Authorization: Bearer YOUR_JWT_TOKEN
+```
+
+**URL Parameters:**
+- `id`: Product MongoDB ID
+
+**Response:** `200 OK` (product with the offer removed)
+```json
+{
+  "_id": "prod_1",
+  "offers": []
+}
+```
+
+**Errors:**
+- `404` Product not found
+- `404` No offers to delete
 
 ---
 
@@ -467,7 +573,7 @@ POST /storekeeper/orders/65f4a3c9d1e2f3g4h5i6j7k8/ready
 ```
 
 **Precondition:**
-- Order status must be `ACCEPTED`
+- Order status must be `PLACED`
 
 **Response:** `200 OK`
 ```json
@@ -482,7 +588,7 @@ POST /storekeeper/orders/65f4a3c9d1e2f3g4h5i6j7k8/ready
 ```json
 {
   "statusCode": 404,
-  "message": "Order not found or not in ACCEPTED status"
+  "message": "Order not found or not in PLACED status"
 }
 ```
 
@@ -531,54 +637,8 @@ GET /storekeeper/orders/65f4a3c9d1e2f3g4h5i6j7k8/available-delivery
 
 ---
 
-### 2. Assign Delivery Boy
-**Endpoint:** `POST /storekeeper/orders/:id/assign-delivery`
-
-**Headers:**
-```
-Authorization: Bearer YOUR_JWT_TOKEN
-Content-Type: application/json
-```
-
-**URL Parameters:**
-- `id`: Order MongoDB ID
-
-**Body:**
-```json
-{
-  "deliveryBoyId": "delivery_boy_id_123"
-}
-```
-
-**Example:**
-```
-POST /storekeeper/orders/65f4a3c9d1e2f3g4h5i6j7k8/assign-delivery
-```
-
-**Precondition:**
-- Order status must be `READY`
-- Delivery boy must be available
-
-**Response:** `200 OK`
-```json
-{
-  "_id": "65f4a3c9d1e2f3g4h5i6j7k8",
-  "status": "READY",
-  "deliveryBoyId": "delivery_boy_id_123",
-  "updatedAt": "2025-01-19T10:15:00.000Z"
-}
-```
-
-**Validation:**
-- `deliveryBoyId`: Required, valid MongoDB ID
-
-**Error Responses:**
-```json
-{
-  "statusCode": 404,
-  "message": "Order not found or not in READY status"
-}
-```
+### 2. Assign Delivery Boy (Not Implemented)
+This endpoint is not implemented in the current codebase. Storekeeper can list available delivery partners, but assigning a delivery partner to an order is pending implementation.
 
 ---
 
@@ -609,7 +669,7 @@ All protected storekeeper endpoints require:
 Authorization: Bearer <jwt_token>
 ```
 
-**Required Role:** `ADMIN` or `STOREKEEPER`
+**Required Role:** `ADMIN`
 
 ---
 

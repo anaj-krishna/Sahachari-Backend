@@ -8,27 +8,28 @@ API endpoints for delivery partners to manage delivery jobs. All endpoints (exce
 ## Authentication
 
 ### Register Delivery Partner
-**Endpoint:** `POST /auth/register/delivery`
+**Endpoint:** `POST /auth/register`
 
 **Request:**
 ```json
 {
   "name": "Test User",
   "email": "newuser123@store.com",
-  "password": "123456"
+  "password": "123456",
+  "role": "DELIVERY",
+  "address": "456 Delivery St, San Francisco",
+  "serviceablePincodes": ["94102", "94103"]
 }
 ```
 
 **Response (201):**
 ```json
 {
-  "user": {
-    "_id": "user_id",
-    "name": "Test User",
-    "email": "newuser123@store.com",
-    "role": "DELIVERY"
-  },
-  "token": "jwt_token_here"
+  "id": "user_id",
+  "email": "newuser123@store.com",
+  "role": "DELIVERY",
+  "status": "PENDING",
+  "message": "Registration successful. Awaiting admin approval."
 }
 ```
 
@@ -46,13 +47,7 @@ API endpoints for delivery partners to manage delivery jobs. All endpoints (exce
 **Response (200):**
 ```json
 {
-  "user": {
-    "_id": "user_id",
-    "name": "Delivery Partner Name",
-    "email": "aaa.delivery@gmail.com",
-    "role": "DELIVERY"
-  },
-  "token": "jwt_token_here"
+  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 }
 ```
 
@@ -65,10 +60,18 @@ Authorization: Bearer <token>
 
 ## Order Management
 
-### Get Available Jobs
-**Endpoint:** `GET /delivery/orders?status=READY`
+### Get Available Jobs (or My Jobs)
+**Endpoint:** `GET /delivery/orders?status=READY` or `GET /delivery/orders?mine=true`
 
-**Description:** Lists all unassigned orders ready for pickup
+**Description:**
+- `status=READY`: Lists all unassigned orders ready for pickup
+- `mine=true`: Returns orders assigned to the authenticated delivery partner (same as `GET /delivery/orders/me`)
+
+**Examples:**
+```
+GET /delivery/orders?status=READY
+GET /delivery/orders?mine=true
+```
 
 **Response:**
 ```json

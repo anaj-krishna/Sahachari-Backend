@@ -3,7 +3,7 @@ import { Controller, Get, UseGuards, Req, Patch, Body } from '@nestjs/common';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { Request } from 'express';
 import { UsersService } from './users.service'; // Added
-import { User } from './user.schema';           // Added
+import { User } from './user.schema'; // Added
 
 interface JwtUser {
   userId: string;
@@ -26,8 +26,8 @@ export class UsersController {
   @UseGuards(JwtAuthGuard)
   @Patch('update-me')
   async updateMe(
-    @Req() req: Request & { user: JwtUser }, 
-    @Body() updateData: Partial<User> // Partial<User> allows updating any field
+    @Req() req: Request & { user: JwtUser },
+    @Body() updateData: Partial<User>, // Partial<User> allows updating any field
   ) {
     return await this.usersService.updateProfile(req.user.userId, updateData);
   }

@@ -50,7 +50,7 @@ export class Product {
   @Prop()
   category?: string;
 
-  @Prop({ type: [OfferSchema], default: [], id:true })
+  @Prop({ type: [OfferSchema], default: [], id: true })
   offers: Offer[];
 }
 

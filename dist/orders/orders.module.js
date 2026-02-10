@@ -25,7 +25,7 @@ exports.OrdersModule = OrdersModule = __decorate([
                 { name: product_schema_1.Product.name, schema: product_schema_1.ProductSchema },
             ]),
             cart_module_1.CartModule,
-            users_module_1.UsersModule
+            users_module_1.UsersModule,
         ],
         providers: [orders_service_1.OrdersService],
         exports: [orders_service_1.OrdersService],
