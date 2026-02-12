@@ -49,6 +49,12 @@ export class CustomerController {
     return this.productsService.findAll({ search, category });
   }
 
+  @Get('category/:category/stores')
+getCategoryStores(@Param('category') category: string) {
+  return this.productsService.getCategoryWithStores(category);
+}
+
+
   @Get('products/:id')
   getProduct(@Param('id') id: string) {
     return this.productsService.findById(id);

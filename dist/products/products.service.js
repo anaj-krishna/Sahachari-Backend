@@ -138,6 +138,42 @@ let ProductsService = class ProductsService {
         await product.save();
         return product;
     }
+    async getCategoryWithStores(category) {
+        return this.productModel.aggregate([
+            { $match: { category } },
+            {
+                $group: {
+                    _id: '$category',
+                    storeIds: { $addToSet: '$storeId' },
+                },
+            },
+            {
+                $lookup: {
+                    from: 'users',
+                    localField: 'storeIds',
+                    foreignField: '_id',
+                    as: 'stores',
+                },
+            },
+            {
+                $project: {
+                    _id: 0,
+                    category: '$_id',
+                    stores: {
+                        _id: 1,
+                        name: 1,
+                        email: 1,
+                        address: 1,
+                        address2: 1,
+                        mobileNumber: 1,
+                        image: 1,
+                        status: 1,
+                        isVerified: 1,
+                    },
+                },
+            },
+        ]);
+    }
 };
 exports.ProductsService = ProductsService;
 exports.ProductsService = ProductsService = __decorate([

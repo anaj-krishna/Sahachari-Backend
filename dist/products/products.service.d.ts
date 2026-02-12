@@ -99,5 +99,6 @@ export declare class ProductsService {
     } & {
         id: string;
     }>;
+    getCategoryWithStores(category: string): Promise<any[]>;
 }
 export {};

@@ -36,6 +36,9 @@ let CustomerController = class CustomerController {
     getProducts(search, category) {
         return this.productsService.findAll({ search, category });
     }
+    getCategoryStores(category) {
+        return this.productsService.getCategoryWithStores(category);
+    }
     getProduct(id) {
         return this.productsService.findById(id);
     }
@@ -79,6 +82,13 @@ __decorate([
     __metadata("design:paramtypes", [String, String]),
     __metadata("design:returntype", void 0)
 ], CustomerController.prototype, "getProducts", null);
+__decorate([
+    (0, common_1.Get)('category/:category/stores'),
+    __param(0, (0, common_1.Param)('category')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], CustomerController.prototype, "getCategoryStores", null);
 __decorate([
     (0, common_1.Get)('products/:id'),
     __param(0, (0, common_1.Param)('id')),
