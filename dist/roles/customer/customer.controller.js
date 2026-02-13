@@ -72,6 +72,9 @@ let CustomerController = class CustomerController {
     cancelOrder(req, orderId) {
         return this.ordersService.cancelOrder(req.user.userId, orderId);
     }
+    updateCartItemQuantity(req, itemId, quantity) {
+        return this.cartService.updateQuantity(req.user.userId, itemId, quantity);
+    }
 };
 exports.CustomerController = CustomerController;
 __decorate([
@@ -171,6 +174,15 @@ __decorate([
     __metadata("design:paramtypes", [Object, String]),
     __metadata("design:returntype", void 0)
 ], CustomerController.prototype, "cancelOrder", null);
+__decorate([
+    (0, common_1.Patch)('cart/:itemId'),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Param)('itemId')),
+    __param(2, (0, common_1.Body)('quantity')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String, Number]),
+    __metadata("design:returntype", void 0)
+], CustomerController.prototype, "updateCartItemQuantity", null);
 exports.CustomerController = CustomerController = __decorate([
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
     (0, roles_decorator_1.Roles)(role_enum_1.Role.USER),

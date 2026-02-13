@@ -26,140 +26,138 @@ export class OrdersService {
   ) {}
 
   // PLACE ORDER → from cart, split by store
- async placeOrder(userId: string, dto: PlaceOrderDto) {
-  const cart = await this.cartService.getCart(userId);
+  async placeOrder(userId: string, dto: PlaceOrderDto) {
+    const cart = await this.cartService.getCart(userId);
 
-  if (!cart || cart.items.length === 0) {
-    throw new BadRequestException('Cart is empty');
-  }
-
-  // Generate unique checkoutId
-  const checkoutId = `CHECKOUT-${Date.now()}-${Math.random()
-    .toString(36)
-    .substr(2, 9)}`;
-
-  // Group cart items by storeId (admin user)
-  const itemsByStore = new Map<string, CartItem[]>();
-  for (const item of cart.items) {
-    const storeId = item.storeId.toString();
-    if (!itemsByStore.has(storeId)) {
-      itemsByStore.set(storeId, []);
+    if (!cart || cart.items.length === 0) {
+      throw new BadRequestException('Cart is empty');
     }
-    itemsByStore.get(storeId)!.push(item);
+
+    // Generate unique checkoutId
+    const checkoutId = `CHECKOUT-${Date.now()}-${Math.random()
+      .toString(36)
+      .substr(2, 9)}`;
+
+    // Group cart items by storeId (admin user)
+    const itemsByStore = new Map<string, CartItem[]>();
+    for (const item of cart.items) {
+      const storeId = item.storeId.toString();
+      if (!itemsByStore.has(storeId)) {
+        itemsByStore.set(storeId, []);
+      }
+      itemsByStore.get(storeId)!.push(item);
+    }
+
+    const createdOrders: OrderDocument[] = [];
+
+    for (const [storeId, items] of itemsByStore.entries()) {
+      let storeTotal = 0;
+      const orderItems: OrderItem[] = [];
+
+      // 🔹 Get Store/Admin user (for pickup address)
+      const storeUser = await this.usersService.getById(storeId);
+      if (!storeUser) {
+        throw new NotFoundException(`Store/Admin user ${storeId} not found`);
+      }
+
+      for (const item of items) {
+        const product = await this.productModel.findById(item.productId);
+
+        if (!product) {
+          throw new NotFoundException(
+            `Product ${item.productId.toString()} not found`,
+          );
+        }
+
+        const numericPrice = Number(
+          String(product.price).replace(/[^0-9.]/g, ''),
+        );
+
+        orderItems.push({
+          productId: product._id,
+          quantity: item.quantity,
+          price: numericPrice,
+        });
+
+        storeTotal += numericPrice * item.quantity;
+      }
+
+      // 🔹 Create order with pickupAddress
+      const order = await this.orderModel.create({
+        userId: new Types.ObjectId(userId),
+        storeId: new Types.ObjectId(storeId),
+        checkoutId,
+        items: orderItems,
+        totalAmount: storeTotal,
+        deliveryAddress: dto, // Customer address
+        pickupAddress: storeUser.address, // 🆕 Store/Admin address
+        status: 'PLACED',
+      });
+
+      createdOrders.push(order);
+    }
+
+    // Clear cart after placing all orders
+    await this.cartService.clearCart(userId);
+
+    return {
+      checkoutId,
+      ordersCount: createdOrders.length,
+      totalAmount: createdOrders.reduce(
+        (sum, order) => sum + order.totalAmount,
+        0,
+      ),
+      orders: createdOrders,
+    };
   }
 
-  const createdOrders: OrderDocument[] = [];
+  async placeSingleOrder(userId: string, dto: PlaceSingleOrderDto) {
+    const { productId, quantity, deliveryAddress } = dto;
 
-  for (const [storeId, items] of itemsByStore.entries()) {
-    let storeTotal = 0;
-    const orderItems: OrderItem[] = [];
+    if (quantity <= 0) {
+      throw new BadRequestException('Quantity must be greater than 0');
+    }
 
-    // 🔹 Get Store/Admin user (for pickup address)
+    // 🔹 Get product
+    const product = await this.productModel.findById(productId);
+    if (!product) {
+      throw new NotFoundException(`Product ${productId} not found`);
+    }
+
+    const numericPrice = Number(String(product.price).replace(/[^0-9.]/g, ''));
+
+    const totalAmount = numericPrice * quantity;
+
+    // 🔹 Get store/admin user for pickup address
+    const storeId = product.storeId.toString();
     const storeUser = await this.usersService.getById(storeId);
     if (!storeUser) {
       throw new NotFoundException(`Store/Admin user ${storeId} not found`);
     }
 
-    for (const item of items) {
-      const product = await this.productModel.findById(item.productId);
-
-      if (!product) {
-        throw new NotFoundException(
-          `Product ${item.productId.toString()} not found`,
-        );
-      }
-
-      const numericPrice = Number(
-        String(product.price).replace(/[^0-9.]/g, ''),
-      );
-
-      orderItems.push({
-        productId: product._id,
-        quantity: item.quantity,
-        price: numericPrice,
-      });
-
-      storeTotal += numericPrice * item.quantity;
-    }
-
-    // 🔹 Create order with pickupAddress
+    // 🔹 Create order
     const order = await this.orderModel.create({
       userId: new Types.ObjectId(userId),
       storeId: new Types.ObjectId(storeId),
-      checkoutId,
-      items: orderItems,
-      totalAmount: storeTotal,
-      deliveryAddress: dto,               // Customer address
-      pickupAddress: storeUser.address,   // 🆕 Store/Admin address
+      checkoutId: `SINGLE-${Date.now()}`,
+      items: [
+        {
+          productId: product._id,
+          quantity,
+          price: numericPrice,
+        },
+      ],
+      totalAmount,
+      deliveryAddress, // customer
+      pickupAddress: storeUser.address, // admin/store
       status: 'PLACED',
     });
 
-    createdOrders.push(order);
+    return {
+      message: 'Order placed successfully',
+      order,
+    };
   }
-
-  // Clear cart after placing all orders
-  await this.cartService.clearCart(userId);
-
-  return {
-    checkoutId,
-    ordersCount: createdOrders.length,
-    totalAmount: createdOrders.reduce(
-      (sum, order) => sum + order.totalAmount,
-      0,
-    ),
-    orders: createdOrders,
-  };
-}
-
-async placeSingleOrder(userId: string, dto: PlaceSingleOrderDto) {
-  const { productId, quantity, deliveryAddress } = dto;
-
-  if (quantity <= 0) {
-    throw new BadRequestException('Quantity must be greater than 0');
-  }
-
-  // 🔹 Get product
-  const product = await this.productModel.findById(productId);
-  if (!product) {
-    throw new NotFoundException(`Product ${productId} not found`);
-  }
-
-  const numericPrice = Number(
-    String(product.price).replace(/[^0-9.]/g, ''),
-  );
-
-  const totalAmount = numericPrice * quantity;
-
-  // 🔹 Get store/admin user for pickup address
-  const storeId = product.storeId.toString();
-  const storeUser = await this.usersService.getById(storeId);
-  if (!storeUser) {
-    throw new NotFoundException(`Store/Admin user ${storeId} not found`);
-  }
-
-  // 🔹 Create order
-  const order = await this.orderModel.create({
-    userId: new Types.ObjectId(userId),
-    storeId: new Types.ObjectId(storeId),
-    checkoutId: `SINGLE-${Date.now()}`,
-    items: [
-      {
-        productId: product._id,
-        quantity,
-        price: numericPrice,
-      },
-    ],
-    totalAmount,
-    deliveryAddress,            // customer
-    pickupAddress: storeUser.address, // admin/store
-    status: 'PLACED',
-  });
-
-  return {
-    message: 'Order placed successfully',
-    order,
-  };
-}
 
   // GET ALL ORDERS for user (optionally filter by checkout)
   async getOrders(userId: string, checkoutId?: string) {

@@ -31,4 +31,11 @@ export declare class CartService {
         id: string;
     }>;
     clearCart(userId: string): Promise<void>;
+    updateQuantity(userId: string, itemId: string, quantity: number): Promise<import("mongoose").Document<unknown, {}, CartDocument, {}, import("mongoose").DefaultSchemaOptions> & Cart & import("mongoose").Document<Types.ObjectId, any, any, Record<string, any>, {}> & Required<{
+        _id: Types.ObjectId;
+    }> & {
+        __v: number;
+    } & {
+        id: string;
+    }>;
 }
