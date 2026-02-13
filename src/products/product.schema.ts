@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
 
@@ -44,12 +45,12 @@ export class Product {
   quantity: number;
 
   @Prop({ required: true })
-  price: number;
+  price: string;
 
   @Prop()
   category?: string;
 
-  @Prop({ type: [OfferSchema], default: [] })
+  @Prop({ type: [OfferSchema], default: [], id: true })
   offers: Offer[];
 }
 

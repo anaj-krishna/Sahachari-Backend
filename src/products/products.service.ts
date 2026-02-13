@@ -1,3 +1,5 @@
+/* eslint-disable prettier/prettier */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
@@ -22,13 +24,12 @@ type LeanProduct = {
   description?: string;
   images?: string[];
   quantity: number;
-  price: number;
+  price: string;
   category?: string;
   offers: LeanOffer[];
 };
 
 /* ================= SERVICE ================= */
-
 @Injectable()
 export class ProductsService {
   constructor(
@@ -37,7 +38,6 @@ export class ProductsService {
   ) {}
 
   /* ========== STORE (ADMIN = STOREKEEPER) ========== */
-
   async create(storeId: string, dto: CreateProductDto) {
     return this.productModel.create({
       ...dto,
@@ -50,7 +50,6 @@ export class ProductsService {
       _id: productId,
       storeId: new Types.ObjectId(storeId),
     });
-
     if (!product) throw new NotFoundException('Product not found');
     return product;
   }
@@ -64,7 +63,6 @@ export class ProductsService {
       { $set: dto },
       { new: true, runValidators: true },
     );
-
     if (!updatedProduct) throw new NotFoundException('Product not found');
     return updatedProduct;
   }
@@ -74,7 +72,6 @@ export class ProductsService {
       _id: productId,
       storeId: new Types.ObjectId(storeId),
     });
-
     if (!product) throw new NotFoundException('Product not found');
     return { message: 'Product deleted successfully' };
   }
@@ -85,7 +82,6 @@ export class ProductsService {
       { $set: { quantity } },
       { new: true, runValidators: true },
     );
-
     if (!product) throw new NotFoundException('Product not found');
     return product;
   }
@@ -98,24 +94,19 @@ export class ProductsService {
       startDate: dto.startDate ? new Date(dto.startDate) : undefined,
       endDate: dto.endDate ? new Date(dto.endDate) : undefined,
     };
-
     const product = await this.productModel.findByIdAndUpdate(
       productId,
       { $push: { offers: offer } },
       { new: true },
     );
-
     if (!product) throw new NotFoundException('Product not found');
     return product;
   }
 
   /* ================= CUSTOMER ================= */
-
   async findById(id: string) {
     const product = await this.productModel.findById(id).lean<LeanProduct>();
-
     if (!product) throw new NotFoundException('Product not found');
-
     return {
       ...product,
       finalPrice: this.calculateFinalPrice(product),
@@ -124,17 +115,13 @@ export class ProductsService {
 
   async findAll(filters?: { search?: string; category?: string }) {
     const query: Record<string, unknown> = {};
-
     if (filters?.search) {
       query['name'] = { $regex: filters.search, $options: 'i' };
     }
-
     if (filters?.category) {
       query['category'] = filters.category;
     }
-
     const products = await this.productModel.find(query).lean<LeanProduct[]>();
-
     return products.map((product) => ({
       ...product,
       finalPrice: this.calculateFinalPrice(product),
@@ -156,10 +143,15 @@ export class ProductsService {
   }
 
   /* ================= HELPERS ================= */
+  private toNumberPrice(price: string | number): number {
+    return Number(String(price || '').replace(/[^0-9.]/g, '')) || 0;
+  }
 
   private calculateFinalPrice(product: LeanProduct): number {
+    const basePrice = this.toNumberPrice(product.price);
+
     if (!product.offers || product.offers.length === 0) {
-      return product.price;
+      return basePrice;
     }
 
     const now = new Date();
@@ -171,19 +163,31 @@ export class ProductsService {
         (!offer.endDate || offer.endDate >= now),
     );
 
-    if (!activeOffer) return product.price;
+    if (!activeOffer) return basePrice;
 
     if (activeOffer.type === DiscountType.PERCENTAGE) {
-      return Math.max(
-        product.price - (product.price * activeOffer.value) / 100,
-        0,
-      );
+      return Math.max(basePrice - (basePrice * activeOffer.value) / 100, 0);
     }
 
     if (activeOffer.type === DiscountType.FLAT) {
-      return Math.max(product.price - activeOffer.value, 0);
+      return Math.max(basePrice - activeOffer.value, 0);
     }
 
-    return product.price;
+    return basePrice;
+  }
+
+  async removeSingleOffer(productId: string) {
+    const product = await this.productModel.findById(productId);
+    if (!product) throw new NotFoundException('Product not found');
+
+    if (!product.offers || product.offers.length === 0) {
+      throw new NotFoundException('No offers to delete');
+    }
+
+    // Remove the only offer (or the first one if multiple)
+    product.offers.splice(0, 1);
+    await product.save();
+
+    return product;
   }
 }

@@ -29,3 +29,4 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     };
   }
 }
+// This file checks JWT tokens and extracts user data from them so your API knows who is making the request.

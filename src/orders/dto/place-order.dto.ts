@@ -1,9 +1,5 @@
-import {
-  IsString,
-  IsOptional,
-  IsPhoneNumber,
-  MinLength,
-} from 'class-validator';
+/* eslint-disable prettier/prettier */
+import { IsString, IsOptional, MinLength } from 'class-validator';
 
 export class PlaceOrderDto {
   @IsString()
@@ -19,7 +15,6 @@ export class PlaceOrderDto {
   zipCode: string;
 
   @IsString()
-  @IsPhoneNumber()
   phone: string;
 
   @IsOptional()

@@ -1,3 +1,6 @@
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-return */
+/* eslint-disable prettier/prettier */
 import {
   Controller,
   Get,
@@ -12,6 +15,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { Request } from 'express';
+import { AddOfferDto } from '../../products/dto/add-offer.dto';
 
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
@@ -72,6 +76,17 @@ export class StorekeeperController {
     @Param('id') productId: string,
   ) {
     return this.productsService.deleteProduct(req.user.userId, productId);
+  }
+
+  /* ================= OFFERS ================= */
+
+  @Post('products/:id/offer')
+  addOfferToProduct(@Param('id') productId: string, @Body() dto: AddOfferDto) {
+    return this.productsService.addOffer(productId, dto);
+  }
+  @Delete('products/:id/offer')
+  deleteSingleOffer(@Param('id') productId: string) {
+    return this.productsService.removeSingleOffer(productId);
   }
 
   @Patch('products/:id/stock')

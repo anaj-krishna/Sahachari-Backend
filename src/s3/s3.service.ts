@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable prettier/prettier */
 import { Injectable } from '@nestjs/common';
@@ -13,7 +11,7 @@ export class S3Service {
 
   constructor() {
     this.bucketName = process.env.AWS_BUCKET_NAME || '';
-    
+
     this.s3 = new S3({
       region: process.env.AWS_REGION || 'us-east-1',
       accessKeyId: process.env.AWS_ACCESS_KEY_ID,
