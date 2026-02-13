@@ -28,15 +28,28 @@ export class AuthService {
     const status =
       dto.role === Role.USER ? AccountStatus.ACTIVE : AccountStatus.PENDING;
 
-    const user = await this.usersService.createUser({
-      name: dto.name,
-      email: dto.email,
-      password: dto.password,
-      role: dto.role,
-      status,
-      address: dto.address,
-      serviceablePincodes: dto.serviceablePincodes,
-    });
+
+  const user = await this.usersService.createUser({
+    name: dto.name,
+    email: dto.email,
+    password: dto.password,
+    role: dto.role,
+    status,
+    address: dto.address,
+    serviceablePincodes: dto.serviceablePincodes,
+  });
+
+  return {
+    id: user._id.toString(),
+    email: user.email,
+    role: user.role,
+    status: user.status,
+    message:
+      dto.role === Role.USER
+        ? 'Registration successful'
+        : 'Registration successful. Awaiting admin approval.',
+  };
+}
 
     return {
       id: user._id.toString(),
