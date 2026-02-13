@@ -28,6 +28,7 @@ export declare class CustomerController {
             endDate?: Date;
         }[];
     }[]>;
+    getCategoryStores(category: string): Promise<any[]>;
     getProduct(id: string): Promise<{
         finalPrice: number;
         _id: import("mongoose").Types.ObjectId;
