@@ -14,23 +14,23 @@ export class UsersService {
   ) {}
 
   // CUSTOMER signup (auto active)
- async createUser(data: {
-  name: string;
-  email: string;
-  password: string;
-  role: Role;
-  status: AccountStatus;
-  address: string;
-  serviceablePincodes: string[];
-}): Promise<UserDocument> {
-  const hashed = await bcrypt.hash(data.password, 10);
+  async createUser(data: {
+    name: string;
+    email: string;
+    password: string;
+    role: Role;
+    status: AccountStatus;
+    address: string;
+    serviceablePincodes: string[];
+  }): Promise<UserDocument> {
+    const hashed = await bcrypt.hash(data.password, 10);
 
-  return this.userModel.create({
-    ...data,
-    password: hashed,
-  });
-}
-                                 
+    return this.userModel.create({
+      ...data,
+      password: hashed,
+    });
+  }
+
   async findByEmail(email: string): Promise<UserDocument | null> {
     return this.userModel.findOne({ email }).exec();
   }

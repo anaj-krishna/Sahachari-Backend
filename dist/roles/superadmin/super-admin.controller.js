@@ -39,18 +39,34 @@ let SuperAdminController = class SuperAdminController {
     login(dto) {
         return this.superAdminService.login(dto);
     }
+    async getProfile(req) {
+        const superAdminId = req.user?.userId ?? req.user;
+        return this.superAdminService.getProfile(superAdminId);
+    }
+    async getStorekeepers(req) {
+        const superAdminId = req.user?.userId ?? req.user;
+        return this.superAdminService.getStorekeepers(superAdminId);
+    }
+    async getDeliveryBoys(req) {
+        const superAdminId = req.user?.userId ?? req.user;
+        return this.superAdminService.getDeliveryBoys(superAdminId);
+    }
     async createStorekeeper(dto, req) {
         dto.role = role_enum_1.Role.ADMIN;
         const user = await this.authService.register(dto);
-        const superAdminId = req.user;
-        await this.superAdminModel.findByIdAndUpdate(superAdminId, { $addToSet: { storekeepers: new mongoose_2.Types.ObjectId(user.id) } });
+        const superAdminId = req.user?.userId ?? req.user;
+        await this.superAdminModel.findByIdAndUpdate(superAdminId, {
+            $addToSet: { storekeepers: new mongoose_2.Types.ObjectId(user.id) },
+        });
         return user;
     }
     async createDeliveryBoy(dto, req) {
         dto.role = role_enum_1.Role.DELIVERY;
         const user = await this.authService.register(dto);
-        const superAdminId = req.user;
-        await this.superAdminModel.findByIdAndUpdate(superAdminId, { $addToSet: { deliveryBoys: new mongoose_2.Types.ObjectId(user.id) } });
+        const superAdminId = req.user?.userId ?? req.user;
+        await this.superAdminModel.findByIdAndUpdate(superAdminId, {
+            $addToSet: { deliveryBoys: new mongoose_2.Types.ObjectId(user.id) },
+        });
         return user;
     }
 };
@@ -69,6 +85,30 @@ __decorate([
     __metadata("design:paramtypes", [super_admin_login_dto_1.SuperAdminLoginDto]),
     __metadata("design:returntype", void 0)
 ], SuperAdminController.prototype, "login", null);
+__decorate([
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.Get)('me'),
+    __param(0, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], SuperAdminController.prototype, "getProfile", null);
+__decorate([
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.Get)('storekeepers'),
+    __param(0, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], SuperAdminController.prototype, "getStorekeepers", null);
+__decorate([
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.Get)('delivery-boys'),
+    __param(0, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], SuperAdminController.prototype, "getDeliveryBoys", null);
 __decorate([
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     (0, common_1.Post)('create-storekeeper'),

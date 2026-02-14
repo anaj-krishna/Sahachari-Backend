@@ -15,6 +15,15 @@ class SuperAdminSignupDto {
     name;
     email;
     password;
+    mobileNumber;
+    state;
+    district;
+    taluk;
+    localBodyType;
+    localBodyName;
+    ward;
+    addressLine1;
+    pincode;
     location;
 }
 exports.SuperAdminSignupDto = SuperAdminSignupDto;
@@ -31,6 +40,52 @@ __decorate([
     __metadata("design:type", String)
 ], SuperAdminSignupDto.prototype, "password", void 0);
 __decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], SuperAdminSignupDto.prototype, "mobileNumber", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], SuperAdminSignupDto.prototype, "state", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], SuperAdminSignupDto.prototype, "district", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], SuperAdminSignupDto.prototype, "taluk", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], SuperAdminSignupDto.prototype, "localBodyType", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], SuperAdminSignupDto.prototype, "localBodyName", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], SuperAdminSignupDto.prototype, "ward", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], SuperAdminSignupDto.prototype, "addressLine1", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.Matches)(/^\d{6}$/),
+    __metadata("design:type", String)
+], SuperAdminSignupDto.prototype, "pincode", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsNotEmpty)(),
     __metadata("design:type", String)
 ], SuperAdminSignupDto.prototype, "location", void 0);

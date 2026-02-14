@@ -64,12 +64,36 @@ let SuperAdminService = class SuperAdminService {
         if (existing) {
             throw new common_1.BadRequestException('Email already exists');
         }
+        const derivedLocation = dto.location
+            ? dto.location
+            : [
+                dto.addressLine1,
+                dto.localBodyName,
+                dto.taluk,
+                dto.district,
+                dto.state,
+                dto.pincode,
+            ]
+                .filter(Boolean)
+                .join(', ');
+        if (!derivedLocation) {
+            throw new common_1.BadRequestException('location should not be empty');
+        }
         const hashedPassword = await bcrypt.hash(dto.password, 10);
         const admin = await this.superAdminModel.create({
             name: dto.name,
             email: dto.email,
             password: hashedPassword,
-            location: dto.location,
+            location: derivedLocation,
+            mobileNumber: dto.mobileNumber,
+            state: dto.state,
+            district: dto.district,
+            taluk: dto.taluk,
+            localBodyType: dto.localBodyType,
+            localBodyName: dto.localBodyName,
+            ward: dto.ward,
+            addressLine1: dto.addressLine1,
+            pincode: dto.pincode,
             role: 'SUPER_ADMIN',
             storekeepers: [],
             deliveryBoys: [],
@@ -81,6 +105,39 @@ let SuperAdminService = class SuperAdminService {
             location: admin.location,
             message: 'Super Admin registered successfully',
         };
+    }
+    async getProfile(superAdminId) {
+        const admin = await this.superAdminModel
+            .findById(superAdminId)
+            .select('-password')
+            .lean();
+        if (!admin)
+            throw new common_1.NotFoundException('Super Admin not found');
+        return admin;
+    }
+    async getStorekeepers(superAdminId) {
+        const doc = await this.superAdminModel
+            .findById(superAdminId)
+            .select('storekeepers')
+            .populate({
+            path: 'storekeepers',
+            model: 'User',
+            select: 'name email role address serviceablePincodes status mobileNumber',
+        })
+            .lean();
+        return doc?.storekeepers ?? [];
+    }
+    async getDeliveryBoys(superAdminId) {
+        const doc = await this.superAdminModel
+            .findById(superAdminId)
+            .select('deliveryBoys')
+            .populate({
+            path: 'deliveryBoys',
+            model: 'User',
+            select: 'name email role address serviceablePincodes status mobileNumber',
+        })
+            .lean();
+        return doc?.deliveryBoys ?? [];
     }
     async login(dto) {
         const admin = await this.superAdminModel.findOne({ email: dto.email });

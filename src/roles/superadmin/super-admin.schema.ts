@@ -15,6 +15,33 @@ export class SuperAdmin extends Document {
   @Prop({ required: true })
   location: string;
 
+  @Prop()
+  mobileNumber?: string;
+
+  @Prop()
+  state?: string;
+
+  @Prop()
+  district?: string;
+
+  @Prop()
+  taluk?: string;
+
+  @Prop()
+  localBodyType?: string;
+
+  @Prop()
+  localBodyName?: string;
+
+  @Prop()
+  ward?: string;
+
+  @Prop()
+  addressLine1?: string;
+
+  @Prop()
+  pincode?: string;
+
   @Prop({ default: 'SUPER_ADMIN' })
   role: string;
 

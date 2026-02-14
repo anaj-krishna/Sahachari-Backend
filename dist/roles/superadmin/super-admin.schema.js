@@ -17,6 +17,15 @@ let SuperAdmin = class SuperAdmin extends mongoose_2.Document {
     email;
     password;
     location;
+    mobileNumber;
+    state;
+    district;
+    taluk;
+    localBodyType;
+    localBodyName;
+    ward;
+    addressLine1;
+    pincode;
     role;
     storekeepers;
     deliveryBoys;
@@ -38,6 +47,42 @@ __decorate([
     (0, mongoose_1.Prop)({ required: true }),
     __metadata("design:type", String)
 ], SuperAdmin.prototype, "location", void 0);
+__decorate([
+    (0, mongoose_1.Prop)(),
+    __metadata("design:type", String)
+], SuperAdmin.prototype, "mobileNumber", void 0);
+__decorate([
+    (0, mongoose_1.Prop)(),
+    __metadata("design:type", String)
+], SuperAdmin.prototype, "state", void 0);
+__decorate([
+    (0, mongoose_1.Prop)(),
+    __metadata("design:type", String)
+], SuperAdmin.prototype, "district", void 0);
+__decorate([
+    (0, mongoose_1.Prop)(),
+    __metadata("design:type", String)
+], SuperAdmin.prototype, "taluk", void 0);
+__decorate([
+    (0, mongoose_1.Prop)(),
+    __metadata("design:type", String)
+], SuperAdmin.prototype, "localBodyType", void 0);
+__decorate([
+    (0, mongoose_1.Prop)(),
+    __metadata("design:type", String)
+], SuperAdmin.prototype, "localBodyName", void 0);
+__decorate([
+    (0, mongoose_1.Prop)(),
+    __metadata("design:type", String)
+], SuperAdmin.prototype, "ward", void 0);
+__decorate([
+    (0, mongoose_1.Prop)(),
+    __metadata("design:type", String)
+], SuperAdmin.prototype, "addressLine1", void 0);
+__decorate([
+    (0, mongoose_1.Prop)(),
+    __metadata("design:type", String)
+], SuperAdmin.prototype, "pincode", void 0);
 __decorate([
     (0, mongoose_1.Prop)({ default: 'SUPER_ADMIN' }),
     __metadata("design:type", String)

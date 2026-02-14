@@ -61,12 +61,13 @@ let AuthService = class AuthService {
         if (existing) {
             throw new common_1.UnauthorizedException('Email already in use');
         }
-        const status = dto.role === role_enum_1.Role.USER ? account_status_enum_1.AccountStatus.ACTIVE : account_status_enum_1.AccountStatus.PENDING;
+        const role = dto.role ?? role_enum_1.Role.USER;
+        const status = role === role_enum_1.Role.USER ? account_status_enum_1.AccountStatus.ACTIVE : account_status_enum_1.AccountStatus.PENDING;
         const user = await this.usersService.createUser({
             name: dto.name,
             email: dto.email,
             password: dto.password,
-            role: dto.role,
+            role,
             status,
             address: dto.address,
             serviceablePincodes: dto.serviceablePincodes,
@@ -76,7 +77,7 @@ let AuthService = class AuthService {
             email: user.email,
             role: user.role,
             status: user.status,
-            message: dto.role === role_enum_1.Role.USER
+            message: role === role_enum_1.Role.USER
                 ? 'Registration successful'
                 : 'Registration successful. Awaiting admin approval.',
         };

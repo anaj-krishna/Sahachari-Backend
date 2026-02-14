@@ -9,6 +9,7 @@ import { CustomerModule } from './roles/customer/customer.module';
 import { StorekeeperModule } from './roles/storekeeper/storekeeper.module';
 import { DeliveryModule } from './roles/delivery/delivery.module';
 import { S3Module } from './s3/s3.module';
+import { SuperAdminModule } from './roles/superadmin/superadmin.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { S3Module } from './s3/s3.module';
     StorekeeperModule,
     DeliveryModule,
     S3Module,
+    SuperAdminModule,
   ],
 })
 export class AppModule {}

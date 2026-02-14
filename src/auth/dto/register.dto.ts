@@ -29,8 +29,9 @@ export class RegisterDto {
   @MinLength(6)
   password: string;
 
+  @IsOptional()
   @IsEnum(Role)
-  role: Role;
+  role?: Role;
 
   // FIX: Use @IsOptional instead of passing required: false
   @IsOptional()

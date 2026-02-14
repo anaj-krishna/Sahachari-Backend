@@ -5,7 +5,7 @@ export declare class RegisterDto {
     address: string;
     serviceablePincodes: string[];
     password: string;
-    role: Role;
+    role?: Role;
     address2?: string;
     mobileNumber?: string;
 }

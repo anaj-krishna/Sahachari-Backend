@@ -1,4 +1,3 @@
-/* eslint-disable prettier/prettier */
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { UsersService } from '../users/users.service';
 import { JwtService } from '@nestjs/jwt';
@@ -25,31 +24,20 @@ export class AuthService {
       throw new UnauthorizedException('Email already in use');
     }
 
+    // default role to USER when not provided (allows internal flows to set role)
+    const role: Role = dto.role ?? Role.USER;
     const status =
-      dto.role === Role.USER ? AccountStatus.ACTIVE : AccountStatus.PENDING;
+      role === Role.USER ? AccountStatus.ACTIVE : AccountStatus.PENDING;
 
-
-  const user = await this.usersService.createUser({
-    name: dto.name,
-    email: dto.email,
-    password: dto.password,
-    role: dto.role,
-    status,
-    address: dto.address,
-    serviceablePincodes: dto.serviceablePincodes,
-  });
-
-  return {
-    id: user._id.toString(),
-    email: user.email,
-    role: user.role,
-    status: user.status,
-    message:
-      dto.role === Role.USER
-        ? 'Registration successful'
-        : 'Registration successful. Awaiting admin approval.',
-  };
-}
+    const user = await this.usersService.createUser({
+      name: dto.name,
+      email: dto.email,
+      password: dto.password,
+      role,
+      status,
+      address: dto.address,
+      serviceablePincodes: dto.serviceablePincodes,
+    });
 
     return {
       id: user._id.toString(),
@@ -57,7 +45,7 @@ export class AuthService {
       role: user.role,
       status: user.status,
       message:
-        dto.role === Role.USER
+        role === Role.USER
           ? 'Registration successful'
           : 'Registration successful. Awaiting admin approval.',
     };

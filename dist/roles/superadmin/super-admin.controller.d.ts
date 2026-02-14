@@ -4,7 +4,7 @@ import { SuperAdminLoginDto } from './dto/super-admin-login.dto';
 import { RegisterDto } from 'src/auth/dto/register.dto';
 import { Role } from 'src/common/enums/role.enum';
 import { AuthService } from 'src/auth/auth.service';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { SuperAdmin } from './super-admin.schema';
 export declare class SuperAdminController {
     private readonly superAdminService;
@@ -26,6 +26,13 @@ export declare class SuperAdminController {
         token: string;
         message: string;
     }>;
+    getProfile(req: any): Promise<SuperAdmin & Required<{
+        _id: Types.ObjectId;
+    }> & {
+        __v: number;
+    }>;
+    getStorekeepers(req: any): Promise<Types.ObjectId[]>;
+    getDeliveryBoys(req: any): Promise<Types.ObjectId[]>;
     createStorekeeper(dto: RegisterDto, req: any): Promise<{
         id: string;
         email: string;

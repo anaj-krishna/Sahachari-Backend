@@ -1,11 +1,13 @@
+/* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable prettier/prettier */
+/* eslint-disable @typescript-eslint/no-unsafe-return */
 import {
   Controller,
   Get,
   Post,
   Delete,
-  Patch,
   Param,
   Body,
   Req,
@@ -48,10 +50,9 @@ export class CustomerController {
   }
 
   @Get('category/:category/stores')
-getCategoryStores(@Param('category') category: string) {
-  return this.productsService.getCategoryWithStores(category);
-}
-
+  getCategoryStores(@Param('category') category: string) {
+    return this.productsService.getCategoryWithStores(category);
+  }
 
   @Get('products/:id')
   getProduct(@Param('id') id: string) {
@@ -126,13 +127,4 @@ getCategoryStores(@Param('category') category: string) {
   ) {
     return this.ordersService.cancelOrder(req.user.userId, orderId);
   }
-
-  @Patch('cart/:itemId')
-  updateCartItemQuantity(
-  @Req() req,
-  @Param('itemId') itemId: string,
-  @Body('quantity') quantity: number,
-) {
-  return this.cartService.updateQuantity(req.user.userId, itemId, quantity);
-}
 }

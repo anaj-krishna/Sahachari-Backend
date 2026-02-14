@@ -14,6 +14,13 @@ export declare class SuperAdminService {
         location: string;
         message: string;
     }>;
+    getProfile(superAdminId: string): Promise<SuperAdmin & Required<{
+        _id: import("mongoose").Types.ObjectId;
+    }> & {
+        __v: number;
+    }>;
+    getStorekeepers(superAdminId: string): Promise<import("mongoose").Types.ObjectId[]>;
+    getDeliveryBoys(superAdminId: string): Promise<import("mongoose").Types.ObjectId[]>;
     login(dto: SuperAdminLoginDto): Promise<{
         id: string;
         email: string;

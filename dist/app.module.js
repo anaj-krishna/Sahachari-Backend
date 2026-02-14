@@ -18,6 +18,7 @@ const customer_module_1 = require("./roles/customer/customer.module");
 const storekeeper_module_1 = require("./roles/storekeeper/storekeeper.module");
 const delivery_module_1 = require("./roles/delivery/delivery.module");
 const s3_module_1 = require("./s3/s3.module");
+const superadmin_module_1 = require("./roles/superadmin/superadmin.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -34,6 +35,7 @@ exports.AppModule = AppModule = __decorate([
             storekeeper_module_1.StorekeeperModule,
             delivery_module_1.DeliveryModule,
             s3_module_1.S3Module,
+            superadmin_module_1.SuperAdminModule,
         ],
     })
 ], AppModule);
