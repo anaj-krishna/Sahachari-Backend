@@ -99,6 +99,6 @@ export declare class ProductsService {
     } & {
         id: string;
     }>;
-    getCategoryWithStores(category: string): Promise<any[]>;
+    getCategoryWithStores(category: string, userPincodes: string[]): Promise<any[]>;
 }
 export {};

@@ -24,20 +24,24 @@ const orders_service_1 = require("../../orders/orders.service");
 const add_to_cart_dto_1 = require("../../cart/dto/add-to-cart.dto");
 const place_order_dto_1 = require("../../orders/dto/place-order.dto");
 const place_single_order_dto_1 = require("../../orders/dto/place-single-order.dto");
+const users_service_1 = require("../../users/users.service");
 let CustomerController = class CustomerController {
     productsService;
     cartService;
     ordersService;
-    constructor(productsService, cartService, ordersService) {
+    usersService;
+    constructor(productsService, cartService, ordersService, usersService) {
         this.productsService = productsService;
         this.cartService = cartService;
         this.ordersService = ordersService;
+        this.usersService = usersService;
     }
     getProducts(search, category) {
         return this.productsService.findAll({ search, category });
     }
-    getCategoryStores(category) {
-        return this.productsService.getCategoryWithStores(category);
+    async getCategoryStores(req, category) {
+        const user = await this.usersService.getById(req.user.userId);
+        return this.productsService.getCategoryWithStores(category, user?.serviceablePincodes || []);
     }
     getProduct(id) {
         return this.productsService.findById(id);
@@ -84,10 +88,11 @@ __decorate([
 ], CustomerController.prototype, "getProducts", null);
 __decorate([
     (0, common_1.Get)('category/:category/stores'),
-    __param(0, (0, common_1.Param)('category')),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Param)('category')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:returntype", Promise)
 ], CustomerController.prototype, "getCategoryStores", null);
 __decorate([
     (0, common_1.Get)('products/:id'),
@@ -177,6 +182,7 @@ exports.CustomerController = CustomerController = __decorate([
     (0, common_1.Controller)('customer'),
     __metadata("design:paramtypes", [products_service_1.ProductsService,
         cart_service_1.CartService,
-        orders_service_1.OrdersService])
+        orders_service_1.OrdersService,
+        users_service_1.UsersService])
 ], CustomerController);
 //# sourceMappingURL=customer.controller.js.map

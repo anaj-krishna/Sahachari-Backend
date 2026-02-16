@@ -1,3 +1,6 @@
+/* eslint-disable prettier/prettier */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
@@ -190,46 +193,61 @@ export class ProductsService {
     return product;
   }
 
-  async getCategoryWithStores(category: string) {
-    return this.productModel.aggregate([
-      { $match: { category } },
+  async getCategoryWithStores(
+  category: string,
+  userPincodes: string[],
+) {
+  return this.productModel.aggregate([
+    { $match: { category } },
 
-      // group by storeId
-      {
-        $group: {
-          _id: '$category',
-          storeIds: { $addToSet: '$storeId' },
-        },
+    {
+      $group: {
+        _id: '$category',
+        storeIds: { $addToSet: '$storeId' },
       },
+    },
 
-      // lookup storekeepers from users collection
-      {
-        $lookup: {
-          from: 'users',
-          localField: 'storeIds',
-          foreignField: '_id',
-          as: 'stores',
-        },
+    {
+      $lookup: {
+        from: 'users',
+        localField: 'storeIds',
+        foreignField: '_id',
+        as: 'stores',
       },
+    },
 
-      // project only needed user fields
-      {
-        $project: {
-          _id: 0,
-          category: '$_id',
-          stores: {
-            _id: 1,
-            name: 1,
-            email: 1,
-            address: 1,
-            address2: 1,
-            mobileNumber: 1,
-            image: 1,
-            status: 1,
-            isVerified: 1,
+    {
+      $project: {
+        _id: 0,
+        category: '$_id',
+        stores: {
+          $filter: {
+            input: '$stores',
+            as: 'store',
+            cond: {
+              $and: [
+                { $eq: ['$$store.role', 'ADMIN'] },
+                {
+                  $gt: [
+                    {
+                      $size: {
+                        $setIntersection: [
+                          '$$store.serviceablePincodes',
+                          userPincodes,
+                        ],
+                      },
+                    },
+                    0,
+                  ],
+                },
+              ],
+            },
           },
         },
       },
-    ]);
-  }
+    },
+  ]);
+}
+
+
 }
