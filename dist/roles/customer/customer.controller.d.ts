@@ -5,11 +5,13 @@ import { OrdersService } from '../../orders/orders.service';
 import { AddToCartDto } from '../../cart/dto/add-to-cart.dto';
 import { PlaceOrderDto } from '../../orders/dto/place-order.dto';
 import { PlaceSingleOrderDto } from 'src/orders/dto/place-single-order.dto';
+import { UsersService } from 'src/users/users.service';
 export declare class CustomerController {
     private readonly productsService;
     private readonly cartService;
     private readonly ordersService;
-    constructor(productsService: ProductsService, cartService: CartService, ordersService: OrdersService);
+    private readonly usersService;
+    constructor(productsService: ProductsService, cartService: CartService, ordersService: OrdersService, usersService: UsersService);
     getProducts(search?: string, category?: string): Promise<{
         finalPrice: number;
         _id: import("mongoose").Types.ObjectId;
@@ -28,7 +30,11 @@ export declare class CustomerController {
             endDate?: Date;
         }[];
     }[]>;
-    getCategoryStores(category: string): Promise<any[]>;
+    getCategoryStores(req: Request & {
+        user: {
+            userId: string;
+        };
+    }, category: string): Promise<any[]>;
     getProduct(id: string): Promise<{
         finalPrice: number;
         _id: import("mongoose").Types.ObjectId;

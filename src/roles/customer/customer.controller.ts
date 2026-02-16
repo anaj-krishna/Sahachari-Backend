@@ -28,6 +28,7 @@ import { OrdersService } from '../../orders/orders.service';
 import { AddToCartDto } from '../../cart/dto/add-to-cart.dto';
 import { PlaceOrderDto } from '../../orders/dto/place-order.dto';
 import { PlaceSingleOrderDto } from 'src/orders/dto/place-single-order.dto';
+import { UsersService } from 'src/users/users.service';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(Role.USER)
@@ -37,6 +38,7 @@ export class CustomerController {
     private readonly productsService: ProductsService,
     private readonly cartService: CartService,
     private readonly ordersService: OrdersService,
+    private readonly usersService: UsersService
   ) {}
 
   /* ================= PRODUCTS ================= */
@@ -49,10 +51,21 @@ export class CustomerController {
     return this.productsService.findAll({ search, category });
   }
 
-  @Get('category/:category/stores')
-  getCategoryStores(@Param('category') category: string) {
-    return this.productsService.getCategoryWithStores(category);
-  }
+ @Get('category/:category/stores')
+async getCategoryStores(
+  @Req() req: Request & { user: { userId: string } },
+  @Param('category') category: string,
+) {
+  // 1️⃣ Get logged-in user
+  const user = await this.usersService.getById(req.user.userId);
+
+  // 2️⃣ Pass user's serviceablePincodes to product service
+  return this.productsService.getCategoryWithStores(
+    category,
+    user?.serviceablePincodes || [],
+  );
+}
+
 
   @Get('products/:id')
   getProduct(@Param('id') id: string) {

@@ -138,7 +138,7 @@ let ProductsService = class ProductsService {
         await product.save();
         return product;
     }
-    async getCategoryWithStores(category) {
+    async getCategoryWithStores(category, userPincodes) {
         return this.productModel.aggregate([
             { $match: { category } },
             {
@@ -160,15 +160,28 @@ let ProductsService = class ProductsService {
                     _id: 0,
                     category: '$_id',
                     stores: {
-                        _id: 1,
-                        name: 1,
-                        email: 1,
-                        address: 1,
-                        address2: 1,
-                        mobileNumber: 1,
-                        image: 1,
-                        status: 1,
-                        isVerified: 1,
+                        $filter: {
+                            input: '$stores',
+                            as: 'store',
+                            cond: {
+                                $and: [
+                                    { $eq: ['$$store.role', 'ADMIN'] },
+                                    {
+                                        $gt: [
+                                            {
+                                                $size: {
+                                                    $setIntersection: [
+                                                        '$$store.serviceablePincodes',
+                                                        userPincodes,
+                                                    ],
+                                                },
+                                            },
+                                            0,
+                                        ],
+                                    },
+                                ],
+                            },
+                        },
                     },
                 },
             },
