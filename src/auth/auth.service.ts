@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { UsersService } from '../users/users.service';
 import { JwtService } from '@nestjs/jwt';
@@ -26,8 +27,9 @@ export class AuthService {
 
     // default role to USER when not provided (allows internal flows to set role)
     const role: Role = dto.role ?? Role.USER;
-    const status =
-      role === Role.USER ? AccountStatus.ACTIVE : AccountStatus.PENDING;
+     const status = AccountStatus.ACTIVE
+    // const status =
+    //   role === Role.USER ? AccountStatus.ACTIVE : AccountStatus.PENDING;
 
     const user = await this.usersService.createUser({
       name: dto.name,
