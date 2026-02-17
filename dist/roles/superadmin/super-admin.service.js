@@ -49,27 +49,26 @@ exports.SuperAdminService = void 0;
 const common_1 = require("@nestjs/common");
 const mongoose_1 = require("@nestjs/mongoose");
 const mongoose_2 = require("mongoose");
-const super_admin_schema_1 = require("./super-admin.schema");
 const bcrypt = __importStar(require("bcrypt"));
 const jwt_1 = require("@nestjs/jwt");
-const users_service_1 = require("../../users/users.service");
+const super_admin_schema_1 = require("./super-admin.schema");
 let SuperAdminService = class SuperAdminService {
-    superAdminModel;
+    adminModel;
     jwtService;
-    usersService;
-    constructor(superAdminModel, jwtService, usersService) {
-        this.superAdminModel = superAdminModel;
+    constructor(adminModel, jwtService) {
+        this.adminModel = adminModel;
         this.jwtService = jwtService;
-        this.usersService = usersService;
+    }
+    USER_FIELDS = 'name email role address serviceablePincodes status mobileNumber address2 image isVerified';
+    validateId(id, label) {
+        if (!mongoose_2.Types.ObjectId.isValid(id))
+            throw new common_1.BadRequestException(`${label} is invalid`);
     }
     async signup(dto) {
-        const existing = await this.superAdminModel.findOne({ email: dto.email });
-        if (existing) {
+        if (await this.adminModel.exists({ email: dto.email }))
             throw new common_1.BadRequestException('Email already exists');
-        }
-        const derivedLocation = dto.location
-            ? dto.location
-            : [
+        const location = dto.location ||
+            [
                 dto.addressLine1,
                 dto.localBodyName,
                 dto.taluk,
@@ -79,117 +78,86 @@ let SuperAdminService = class SuperAdminService {
             ]
                 .filter(Boolean)
                 .join(', ');
-        if (!derivedLocation) {
+        if (!location)
             throw new common_1.BadRequestException('location should not be empty');
-        }
-        const hashedPassword = await bcrypt.hash(dto.password, 10);
-        const admin = await this.superAdminModel.create({
-            name: dto.name,
-            email: dto.email,
-            password: hashedPassword,
-            location: derivedLocation,
-            mobileNumber: dto.mobileNumber,
-            state: dto.state,
-            district: dto.district,
-            taluk: dto.taluk,
-            localBodyType: dto.localBodyType,
-            localBodyName: dto.localBodyName,
-            ward: dto.ward,
-            addressLine1: dto.addressLine1,
-            pincode: dto.pincode,
+        const admin = await this.adminModel.create({
+            ...dto,
+            password: await bcrypt.hash(dto.password, 10),
+            location,
             role: 'SUPER_ADMIN',
             storekeepers: [],
             deliveryBoys: [],
         });
         return {
-            id: admin._id.toString(),
+            id: admin._id,
             email: admin.email,
             role: admin.role,
-            location: admin.location,
-            message: 'Super Admin registered successfully',
+            message: 'Registered successfully',
         };
     }
-    async getProfile(superAdminId) {
-        const admin = await this.superAdminModel
-            .findById(superAdminId)
+    async login({ email, password }) {
+        const admin = await this.adminModel.findOne({ email });
+        if (!admin || !(await bcrypt.compare(password, admin.password)))
+            throw new common_1.UnauthorizedException('Invalid credentials');
+        const token = this.jwtService.sign({
+            sub: admin._id,
+            role: admin.role,
+            email: admin.email,
+        });
+        return {
+            id: admin._id,
+            email: admin.email,
+            role: admin.role,
+            token,
+            message: 'Login successful',
+        };
+    }
+    async getProfile(adminId) {
+        this.validateId(adminId, 'SuperAdmin id');
+        const admin = await this.adminModel
+            .findById(adminId)
             .select('-password')
             .lean();
         if (!admin)
             throw new common_1.NotFoundException('Super Admin not found');
         return admin;
     }
-    async getStorekeepers(superAdminId) {
-        const doc = await this.superAdminModel
-            .findById(superAdminId)
-            .select('storekeepers')
+    async getMembers(adminId, path) {
+        this.validateId(adminId, 'SuperAdmin id');
+        const doc = await this.adminModel
+            .findById(adminId)
+            .populate({ path, model: 'User', select: this.USER_FIELDS })
+            .lean();
+        return doc?.[path] ?? [];
+    }
+    async getMemberDetail(adminId, path, userId) {
+        this.validateId(adminId, 'SuperAdmin id');
+        this.validateId(userId, 'User id');
+        const doc = await this.adminModel
+            .findById(adminId)
             .populate({
-            path: 'storekeepers',
+            path,
             model: 'User',
-            select: 'name email role address serviceablePincodes status mobileNumber',
+            match: { _id: new mongoose_2.Types.ObjectId(userId) },
+            select: this.USER_FIELDS,
         })
             .lean();
-        return doc?.storekeepers ?? [];
-    }
-    async getDeliveryBoys(superAdminId) {
-        const doc = await this.superAdminModel
-            .findById(superAdminId)
-            .select('deliveryBoys')
-            .populate({
-            path: 'deliveryBoys',
-            model: 'User',
-            select: 'name email role address serviceablePincodes status mobileNumber',
-        })
-            .lean();
-        return doc?.deliveryBoys ?? [];
-    }
-    async getStorekeeperDetail(superAdminId, userId) {
-        const exists = await this.superAdminModel.exists({
-            _id: new mongoose_2.Types.ObjectId(superAdminId),
-            storekeepers: new mongoose_2.Types.ObjectId(userId),
-        });
-        if (!exists) {
-            throw new common_1.NotFoundException('Storekeeper not found in your registry');
-        }
-        const user = await this.usersService.getById(userId);
+        const user = doc?.[path]?.[0];
         if (!user)
-            throw new common_1.NotFoundException('User not found');
+            throw new common_1.NotFoundException(`${path.slice(0, -1)} not found in registry`);
         return user;
     }
-    async getDeliveryBoyDetail(superAdminId, userId) {
-        const exists = await this.superAdminModel.exists({
-            _id: new mongoose_2.Types.ObjectId(superAdminId),
-            deliveryBoys: new mongoose_2.Types.ObjectId(userId),
-        });
-        if (!exists) {
-            throw new common_1.NotFoundException('Delivery boy not found in your registry');
-        }
-        const user = await this.usersService.getById(userId);
-        if (!user)
-            throw new common_1.NotFoundException('User not found');
-        return user;
+    getStorekeepers(id) {
+        return this.getMembers(id, 'storekeepers');
     }
-    async login(dto) {
-        const admin = await this.superAdminModel.findOne({ email: dto.email });
-        if (!admin) {
-            throw new common_1.UnauthorizedException('Invalid credentials');
-        }
-        const isPasswordValid = await bcrypt.compare(dto.password, admin.password);
-        if (!isPasswordValid) {
-            throw new common_1.UnauthorizedException('Invalid credentials');
-        }
-        const token = this.jwtService.sign({
-            sub: admin._id.toString(),
-            role: admin.role,
-            email: admin.email,
-        });
-        return {
-            id: admin._id.toString(),
-            email: admin.email,
-            role: admin.role,
-            location: admin.location,
-            token,
-            message: 'Login successful',
-        };
+    getStorekeeperDetail(aid, uid) {
+        return this.getMemberDetail(aid, 'storekeepers', uid);
+    }
+    getDeliveryBoys(id) {
+        return this.getMembers(id, 'deliveryBoys');
+    }
+    getDeliveryBoyDetail(aid, uid) {
+        return this.getMemberDetail(aid, 'deliveryBoys', uid);
     }
 };
 exports.SuperAdminService = SuperAdminService;
@@ -197,7 +165,6 @@ exports.SuperAdminService = SuperAdminService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, mongoose_1.InjectModel)(super_admin_schema_1.SuperAdmin.name)),
     __metadata("design:paramtypes", [mongoose_2.Model,
-        jwt_1.JwtService,
-        users_service_1.UsersService])
+        jwt_1.JwtService])
 ], SuperAdminService);
 //# sourceMappingURL=super-admin.service.js.map
