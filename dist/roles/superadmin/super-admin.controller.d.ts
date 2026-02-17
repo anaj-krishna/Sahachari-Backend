@@ -32,7 +32,37 @@ export declare class SuperAdminController {
         __v: number;
     }>;
     getStorekeepers(req: any): Promise<Types.ObjectId[]>;
+    getStorekeeperDetail(req: any, userId: string): Promise<import("mongoose").Document<unknown, {}, import("mongoose").Document<unknown, {}, import("../../users/user.schema").User, {}, import("mongoose").DefaultSchemaOptions> & import("../../users/user.schema").User & {
+        _id: Types.ObjectId;
+    } & {
+        __v: number;
+    } & {
+        id: string;
+    }, {}, import("mongoose").DefaultSchemaOptions> & import("mongoose").Document<unknown, {}, import("../../users/user.schema").User, {}, import("mongoose").DefaultSchemaOptions> & import("../../users/user.schema").User & {
+        _id: Types.ObjectId;
+    } & {
+        __v: number;
+    } & {
+        id: string;
+    } & Required<{
+        _id: Types.ObjectId;
+    }>>;
     getDeliveryBoys(req: any): Promise<Types.ObjectId[]>;
+    getDeliveryBoyDetail(req: any, userId: string): Promise<import("mongoose").Document<unknown, {}, import("mongoose").Document<unknown, {}, import("../../users/user.schema").User, {}, import("mongoose").DefaultSchemaOptions> & import("../../users/user.schema").User & {
+        _id: Types.ObjectId;
+    } & {
+        __v: number;
+    } & {
+        id: string;
+    }, {}, import("mongoose").DefaultSchemaOptions> & import("mongoose").Document<unknown, {}, import("../../users/user.schema").User, {}, import("mongoose").DefaultSchemaOptions> & import("../../users/user.schema").User & {
+        _id: Types.ObjectId;
+    } & {
+        __v: number;
+    } & {
+        id: string;
+    } & Required<{
+        _id: Types.ObjectId;
+    }>>;
     createStorekeeper(dto: RegisterDto, req: any): Promise<{
         id: string;
         email: string;

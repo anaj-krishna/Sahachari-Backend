@@ -6,8 +6,10 @@
    - `POST /super-admin/auth/signup`
    - `POST /super-admin/auth/login`
 3. [Super‑Admin Actions (protected)](#super-admin-actions-protected)
-   - `POST /super-admin/auth/create-storekeeper`
-   - `POST /super-admin/auth/create-delivery-boy`
+  - `POST /super-admin/auth/create-storekeeper`
+  - `POST /super-admin/auth/create-delivery-boy`
+  - `GET /super-admin/auth/storekeepers/:userId`
+  - `GET /super-admin/auth/delivery-boys/:userId`
 4. [DTOs / Validation](#dtos--validation)
 5. [Notes & Examples](#notes--examples)
 
@@ -26,13 +28,33 @@ Base path: `/super-admin/auth`
 - Purpose: Register a Super Admin (no auth required)
 - Headers: `Content-Type: application/json`
 
-Request body (example):
+Request body (examples):
+
+- Minimal (provide `location` directly):
 ```json
 {
   "name": "Sahachari Admin",
   "email": "admin@example.com",
   "password": "securepass",
   "location": "City, State"
+}
+```
+
+- Detailed (you may send address fields; the server will derive `location` if omitted):
+```json
+{
+  "name": "Main Super Admin",
+  "email": "admin@example.com",
+  "password": "securepass",
+  "mobileNumber": "9876553210",
+  "state": "Kerala",
+  "district": "Ernakulam",
+  "taluk": "Kanayannur",
+  "localBodyType": "CORPORATION",
+  "localBodyName": "Kochi Corporation",
+  "ward": "12",
+  "addressLine1": "Kadavil Parambil House, Aroor",
+  "pincode": "688534"
 }
 ```
 
@@ -103,7 +125,7 @@ Request body (RegisterDto) — example:
   "role": "ADMIN"
 }
 ```
-Note: the controller sets `role = ADMIN` server‑side; however `role` is required by the DTO validation, so include a valid enum value in the request.
+Note: the controller sets `role = ADMIN` server‑side; **you may omit `role` from the request** (the server will set it).
 
 Success response: `201 Created`
 ```json
@@ -136,7 +158,7 @@ Request body (RegisterDto) — example:
   "role": "DELIVERY"
 }
 ```
-Note: controller will set `role = DELIVERY` server‑side; include a valid `role` value to satisfy validation.
+Note: controller will set `role = DELIVERY` server‑side; **you may omit `role` from the request** (the server will set it).
 
 Success response: `201 Created`
 ```json
@@ -200,12 +222,61 @@ Success response: `200 OK` (array of users)
 
 ---
 
+### GET /super-admin/auth/storekeepers/:userId
+- Purpose: Return detailed profile of a specific storekeeper created/owned by this Super Admin
+- Auth: required (Super Admin token)
+- Headers: `Authorization: Bearer <token>`
+
+Success response: `200 OK`
+```json
+{
+  "id": "<userId>",
+  "name": "Storekeeper One",
+  "email": "store@example.com",
+  "role": "ADMIN",
+  "address": "123 Market St",
+  "serviceablePincodes": ["560001", "560002"],
+  "status": "PENDING",
+  "isVerified": false,
+  "mobileNumber": "9876543210",
+  "image": null
+}
+```
+Errors:
+- `404 Not Found` — `Storekeeper not found in your registry` or `User not found`
+
+---
+
+### GET /super-admin/auth/delivery-boys/:userId
+- Purpose: Return detailed profile of a specific delivery boy created/owned by this Super Admin
+- Auth: required (Super Admin token)
+- Headers: `Authorization: Bearer <token>`
+
+Success response: `200 OK`
+```json
+{
+  "id": "<userId>",
+  "name": "Delivery One",
+  "email": "delivery@example.com",
+  "role": "DELIVERY",
+  "address": "45 Delivery Ave",
+  "serviceablePincodes": ["560001"],
+  "status": "PENDING",
+  "isVerified": false,
+  "mobileNumber": "9876543210",
+  "image": null
+}
+```
+Errors:
+- `404 Not Found` — `Delivery boy not found in your registry` or `User not found`
+
 ## DTOs / Validation
 - `SuperAdminSignupDto`
   - name: required string
   - email: required, valid email
   - password: minLength 6
-  - location: required string
+  - location: **optional** string — if omitted the server will derive `location` from the address fields below
+  - Optional address fields accepted: `mobileNumber`, `state`, `district`, `taluk`, `localBodyType`, `localBodyName`, `ward`, `addressLine1`, `pincode`
 
 - `SuperAdminLoginDto`
   - email: required, valid email
@@ -217,7 +288,7 @@ Success response: `200 OK` (array of users)
   - address: string (required)
   - serviceablePincodes: non-empty array of strings (required)
   - password: string, minLength 6 (required)
-  - role: one of [USER, DELIVERY, ADMIN, SUPERADMIN] (required by validator but overwritten server‑side)
+  - role: one of [USER, DELIVERY, ADMIN, SUPERADMIN] — **optional** (controller or service will default when needed)
   - address2?: optional string
   - mobileNumber?: optional string
 
@@ -233,7 +304,7 @@ cURL example — create storekeeper (replace <TOKEN>):
 curl -X POST "http://localhost:3000/super-admin/auth/create-storekeeper" \
   -H "Authorization: Bearer <TOKEN>" \
   -H "Content-Type: application/json" \
-  -d '{"name":"Storekeeper One","email":"store@example.com","address":"123 Market St","serviceablePincodes":["560001"],"password":"storepass","role":"ADMIN"}'
+  -d '{"name":"Storekeeper One","email":"store@example.com","address":"123 Market St","serviceablePincodes":["560001"],"password":"storepass"}'
 ```
 
 ---

@@ -1,6 +1,14 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
-import { Controller, Post, Body, Req, UseGuards, Get } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Req,
+  UseGuards,
+  Get,
+  Param,
+} from '@nestjs/common';
 import { SuperAdminService } from './super-admin.service';
 import { SuperAdminSignupDto } from './dto/super-admin-signup.dto';
 import { SuperAdminLoginDto } from './dto/super-admin-login.dto';
@@ -49,12 +57,28 @@ export class SuperAdminController {
     return this.superAdminService.getStorekeepers(superAdminId);
   }
 
+  // 🧾 Get Storekeeper details by id (created by this SuperAdmin)
+  @UseGuards(JwtAuthGuard)
+  @Get('storekeepers/:userId')
+  async getStorekeeperDetail(@Req() req, @Param('userId') userId: string) {
+    const superAdminId = req.user?.userId ?? req.user;
+    return this.superAdminService.getStorekeeperDetail(superAdminId, userId);
+  }
+
   // 🚚 Get DeliveryBoys created by this SuperAdmin
   @UseGuards(JwtAuthGuard)
   @Get('delivery-boys')
   async getDeliveryBoys(@Req() req) {
     const superAdminId = req.user?.userId ?? req.user;
     return this.superAdminService.getDeliveryBoys(superAdminId);
+  }
+
+  // 🚚 Get Delivery boy details by id (created by this SuperAdmin)
+  @UseGuards(JwtAuthGuard)
+  @Get('delivery-boys/:userId')
+  async getDeliveryBoyDetail(@Req() req, @Param('userId') userId: string) {
+    const superAdminId = req.user?.userId ?? req.user;
+    return this.superAdminService.getDeliveryBoyDetail(superAdminId, userId);
   }
 
   // 🏬 Create Storekeeper (SUPER ADMIN only)

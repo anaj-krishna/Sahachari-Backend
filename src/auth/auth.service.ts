@@ -27,7 +27,7 @@ export class AuthService {
 
     // default role to USER when not provided (allows internal flows to set role)
     const role: Role = dto.role ?? Role.USER;
-     const status = AccountStatus.ACTIVE
+    const status = AccountStatus.ACTIVE;
     // const status =
     //   role === Role.USER ? AccountStatus.ACTIVE : AccountStatus.PENDING;
 

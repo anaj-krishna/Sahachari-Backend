@@ -5,12 +5,13 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { SuperAdmin } from './super-admin.schema';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { SuperAdminSignupDto } from './dto/super-admin-signup.dto';
 import { SuperAdminLoginDto } from './dto/super-admin-login.dto';
+import { UsersService } from '../../users/users.service';
 
 @Injectable()
 export class SuperAdminService {
@@ -18,6 +19,7 @@ export class SuperAdminService {
     @InjectModel(SuperAdmin.name)
     private readonly superAdminModel: Model<SuperAdmin>,
     private readonly jwtService: JwtService,
+    private readonly usersService: UsersService,
   ) {}
 
   // 📝 Signup → NO TOKEN
@@ -115,6 +117,38 @@ export class SuperAdminService {
       .lean();
 
     return doc?.deliveryBoys ?? [];
+  }
+
+  // 🧾 Get single storekeeper details created by this SuperAdmin
+  async getStorekeeperDetail(superAdminId: string, userId: string) {
+    const exists = await this.superAdminModel.exists({
+      _id: new Types.ObjectId(superAdminId),
+      storekeepers: new Types.ObjectId(userId),
+    });
+
+    if (!exists) {
+      throw new NotFoundException('Storekeeper not found in your registry');
+    }
+
+    const user = await this.usersService.getById(userId);
+    if (!user) throw new NotFoundException('User not found');
+    return user;
+  }
+
+  // 🚚 Get single delivery boy details created by this SuperAdmin
+  async getDeliveryBoyDetail(superAdminId: string, userId: string) {
+    const exists = await this.superAdminModel.exists({
+      _id: new Types.ObjectId(superAdminId),
+      deliveryBoys: new Types.ObjectId(userId),
+    });
+
+    if (!exists) {
+      throw new NotFoundException('Delivery boy not found in your registry');
+    }
+
+    const user = await this.usersService.getById(userId);
+    if (!user) throw new NotFoundException('User not found');
+    return user;
   }
 
   // �🔐 Login → TOKEN

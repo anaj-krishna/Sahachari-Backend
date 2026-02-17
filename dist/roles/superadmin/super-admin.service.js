@@ -52,12 +52,15 @@ const mongoose_2 = require("mongoose");
 const super_admin_schema_1 = require("./super-admin.schema");
 const bcrypt = __importStar(require("bcrypt"));
 const jwt_1 = require("@nestjs/jwt");
+const users_service_1 = require("../../users/users.service");
 let SuperAdminService = class SuperAdminService {
     superAdminModel;
     jwtService;
-    constructor(superAdminModel, jwtService) {
+    usersService;
+    constructor(superAdminModel, jwtService, usersService) {
         this.superAdminModel = superAdminModel;
         this.jwtService = jwtService;
+        this.usersService = usersService;
     }
     async signup(dto) {
         const existing = await this.superAdminModel.findOne({ email: dto.email });
@@ -139,6 +142,32 @@ let SuperAdminService = class SuperAdminService {
             .lean();
         return doc?.deliveryBoys ?? [];
     }
+    async getStorekeeperDetail(superAdminId, userId) {
+        const exists = await this.superAdminModel.exists({
+            _id: new mongoose_2.Types.ObjectId(superAdminId),
+            storekeepers: new mongoose_2.Types.ObjectId(userId),
+        });
+        if (!exists) {
+            throw new common_1.NotFoundException('Storekeeper not found in your registry');
+        }
+        const user = await this.usersService.getById(userId);
+        if (!user)
+            throw new common_1.NotFoundException('User not found');
+        return user;
+    }
+    async getDeliveryBoyDetail(superAdminId, userId) {
+        const exists = await this.superAdminModel.exists({
+            _id: new mongoose_2.Types.ObjectId(superAdminId),
+            deliveryBoys: new mongoose_2.Types.ObjectId(userId),
+        });
+        if (!exists) {
+            throw new common_1.NotFoundException('Delivery boy not found in your registry');
+        }
+        const user = await this.usersService.getById(userId);
+        if (!user)
+            throw new common_1.NotFoundException('User not found');
+        return user;
+    }
     async login(dto) {
         const admin = await this.superAdminModel.findOne({ email: dto.email });
         if (!admin) {
@@ -168,6 +197,7 @@ exports.SuperAdminService = SuperAdminService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, mongoose_1.InjectModel)(super_admin_schema_1.SuperAdmin.name)),
     __metadata("design:paramtypes", [mongoose_2.Model,
-        jwt_1.JwtService])
+        jwt_1.JwtService,
+        users_service_1.UsersService])
 ], SuperAdminService);
 //# sourceMappingURL=super-admin.service.js.map
