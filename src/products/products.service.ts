@@ -1,6 +1,3 @@
-/* eslint-disable prettier/prettier */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
@@ -193,61 +190,56 @@ export class ProductsService {
     return product;
   }
 
-  async getCategoryWithStores(
-  category: string,
-  userPincodes: string[],
-) {
-  return this.productModel.aggregate([
-    { $match: { category } },
+  async getCategoryWithStores(category: string, userPincodes: string[]) {
+    return this.productModel.aggregate([
+      { $match: { category } },
 
-    {
-      $group: {
-        _id: '$category',
-        storeIds: { $addToSet: '$storeId' },
+      {
+        $group: {
+          _id: '$category',
+          storeIds: { $addToSet: '$storeId' },
+        },
       },
-    },
 
-    {
-      $lookup: {
-        from: 'users',
-        localField: 'storeIds',
-        foreignField: '_id',
-        as: 'stores',
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'storeIds',
+          foreignField: '_id',
+          as: 'stores',
+        },
       },
-    },
 
-    {
-      $project: {
-        _id: 0,
-        category: '$_id',
-        stores: {
-          $filter: {
-            input: '$stores',
-            as: 'store',
-            cond: {
-              $and: [
-                { $eq: ['$$store.role', 'ADMIN'] },
-                {
-                  $gt: [
-                    {
-                      $size: {
-                        $setIntersection: [
-                          '$$store.serviceablePincodes',
-                          userPincodes,
-                        ],
+      {
+        $project: {
+          _id: 0,
+          category: '$_id',
+          stores: {
+            $filter: {
+              input: '$stores',
+              as: 'store',
+              cond: {
+                $and: [
+                  { $eq: ['$$store.role', 'ADMIN'] },
+                  {
+                    $gt: [
+                      {
+                        $size: {
+                          $setIntersection: [
+                            '$$store.serviceablePincodes',
+                            userPincodes,
+                          ],
+                        },
                       },
-                    },
-                    0,
-                  ],
-                },
-              ],
+                      0,
+                    ],
+                  },
+                ],
+              },
             },
           },
         },
       },
-    },
-  ]);
-}
-
-
+    ]);
+  }
 }

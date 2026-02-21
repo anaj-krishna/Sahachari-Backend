@@ -1,32 +1,36 @@
-import { Model } from 'mongoose';
-import { SuperAdmin } from './super-admin.schema';
+import { Model, Types } from 'mongoose';
 import { JwtService } from '@nestjs/jwt';
+import { SuperAdmin } from './super-admin.schema';
 import { SuperAdminSignupDto } from './dto/super-admin-signup.dto';
 import { SuperAdminLoginDto } from './dto/super-admin-login.dto';
 export declare class SuperAdminService {
-    private readonly superAdminModel;
+    private readonly adminModel;
     private readonly jwtService;
-    constructor(superAdminModel: Model<SuperAdmin>, jwtService: JwtService);
+    constructor(adminModel: Model<SuperAdmin>, jwtService: JwtService);
+    private readonly USER_FIELDS;
+    private validateId;
     signup(dto: SuperAdminSignupDto): Promise<{
-        id: string;
+        id: Types.ObjectId;
         email: string;
         role: string;
-        location: string;
         message: string;
     }>;
-    getProfile(superAdminId: string): Promise<SuperAdmin & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    }>;
-    getStorekeepers(superAdminId: string): Promise<import("mongoose").Types.ObjectId[]>;
-    getDeliveryBoys(superAdminId: string): Promise<import("mongoose").Types.ObjectId[]>;
-    login(dto: SuperAdminLoginDto): Promise<{
-        id: string;
+    login({ email, password }: SuperAdminLoginDto): Promise<{
+        id: Types.ObjectId;
         email: string;
         role: string;
-        location: string;
         token: string;
         message: string;
     }>;
+    getProfile(adminId: string): Promise<SuperAdmin & Required<{
+        _id: Types.ObjectId;
+    }> & {
+        __v: number;
+    }>;
+    private getMembers;
+    private getMemberDetail;
+    getStorekeepers(id: string): Promise<Types.ObjectId[]>;
+    getStorekeeperDetail(aid: string, uid: string): Promise<any>;
+    getDeliveryBoys(id: string): Promise<Types.ObjectId[]>;
+    getDeliveryBoyDetail(aid: string, uid: string): Promise<any>;
 }

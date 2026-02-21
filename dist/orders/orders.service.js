@@ -221,7 +221,7 @@ let OrdersService = class OrdersService {
         const order = await this.orderModel.findOneAndUpdate({
             _id: orderId,
             storeId: new mongoose_2.Types.ObjectId(storeId),
-            status: 'PLACED',
+            status: 'ACCEPTED',
         }, {
             $set: { status: 'READY' },
         }, { new: true });
