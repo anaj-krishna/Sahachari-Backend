@@ -292,7 +292,7 @@ export class OrdersService {
       {
         _id: orderId,
         storeId: new Types.ObjectId(storeId),
-        status: 'PLACED',
+        status: 'ACCEPTED',
       },
       {
         $set: { status: 'READY' },

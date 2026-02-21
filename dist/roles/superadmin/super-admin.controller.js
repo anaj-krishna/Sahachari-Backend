@@ -24,14 +24,36 @@ const mongoose_1 = require("@nestjs/mongoose");
 const mongoose_2 = require("mongoose");
 const super_admin_schema_1 = require("./super-admin.schema");
 const jwt_auth_guard_1 = require("../../common/guards/jwt-auth.guard");
+const orders_service_1 = require("../../orders/orders.service");
+const products_service_1 = require("../../products/products.service");
 let SuperAdminController = class SuperAdminController {
     superAdminService;
     authService;
+    ordersService;
+    productsService;
     superAdminModel;
-    constructor(superAdminService, authService, superAdminModel) {
+    constructor(superAdminService, authService, ordersService, productsService, superAdminModel) {
         this.superAdminService = superAdminService;
         this.authService = authService;
+        this.ordersService = ordersService;
+        this.productsService = productsService;
         this.superAdminModel = superAdminModel;
+    }
+    ensureValidObjectId(id, label) {
+        if (!mongoose_2.Types.ObjectId.isValid(id)) {
+            throw new common_1.BadRequestException(`${label} is invalid`);
+        }
+    }
+    async ensureMember(superAdminId, memberId, path) {
+        this.ensureValidObjectId(superAdminId, 'SuperAdmin id');
+        this.ensureValidObjectId(memberId, 'User id');
+        const exists = await this.superAdminModel.exists({
+            _id: new mongoose_2.Types.ObjectId(superAdminId),
+            [path]: new mongoose_2.Types.ObjectId(memberId),
+        });
+        if (!exists) {
+            throw new common_1.BadRequestException(`${path === 'storekeepers' ? 'Storekeeper' : 'Delivery boy'} not linked to this super admin`);
+        }
     }
     signup(dto) {
         return this.superAdminService.signup(dto);
@@ -47,9 +69,128 @@ let SuperAdminController = class SuperAdminController {
         const superAdminId = req.user?.userId ?? req.user;
         return this.superAdminService.getStorekeepers(superAdminId);
     }
+    async getStorekeeperDetail(req, userId) {
+        const superAdminId = req.user?.userId ?? req.user;
+        return this.superAdminService.getStorekeeperDetail(superAdminId, userId);
+    }
     async getDeliveryBoys(req) {
         const superAdminId = req.user?.userId ?? req.user;
         return this.superAdminService.getDeliveryBoys(superAdminId);
+    }
+    async getDeliveryBoyDetail(req, userId) {
+        const superAdminId = req.user?.userId ?? req.user;
+        return this.superAdminService.getDeliveryBoyDetail(superAdminId, userId);
+    }
+    async saGetStoreProducts(req, storeId) {
+        const superAdminId = req.user?.userId ?? req.user;
+        await this.ensureMember(superAdminId, storeId, 'storekeepers');
+        return this.productsService.getProductsByStore(storeId);
+    }
+    async saCreateProduct(req, storeId, dto) {
+        const superAdminId = req.user?.userId ?? req.user;
+        await this.ensureMember(superAdminId, storeId, 'storekeepers');
+        return this.productsService.create(storeId, dto);
+    }
+    async saGetStoreProduct(req, storeId, productId) {
+        const superAdminId = req.user?.userId ?? req.user;
+        await this.ensureMember(superAdminId, storeId, 'storekeepers');
+        return this.productsService.getStoreProductById(storeId, productId);
+    }
+    async saUpdateProduct(req, storeId, productId, dto) {
+        const superAdminId = req.user?.userId ?? req.user;
+        await this.ensureMember(superAdminId, storeId, 'storekeepers');
+        return this.productsService.updateProduct(storeId, productId, dto);
+    }
+    async saDeleteProduct(req, storeId, productId) {
+        const superAdminId = req.user?.userId ?? req.user;
+        await this.ensureMember(superAdminId, storeId, 'storekeepers');
+        return this.productsService.deleteProduct(storeId, productId);
+    }
+    async saAddOffer(req, storeId, productId, dto) {
+        const superAdminId = req.user?.userId ?? req.user;
+        await this.ensureMember(superAdminId, storeId, 'storekeepers');
+        return this.productsService.addOffer(productId, dto);
+    }
+    async saDeleteOffer(req, storeId, productId) {
+        const superAdminId = req.user?.userId ?? req.user;
+        await this.ensureMember(superAdminId, storeId, 'storekeepers');
+        return this.productsService.removeSingleOffer(productId);
+    }
+    async saUpdateStock(req, storeId, productId, dto) {
+        const superAdminId = req.user?.userId ?? req.user;
+        await this.ensureMember(superAdminId, storeId, 'storekeepers');
+        return this.productsService.updateStock(storeId, productId, dto.quantity);
+    }
+    async saGetStoreOrders(req, storeId, status) {
+        const superAdminId = req.user?.userId ?? req.user;
+        await this.ensureMember(superAdminId, storeId, 'storekeepers');
+        return this.ordersService.getOrdersByStore(storeId, status);
+    }
+    async saGetStoreOrder(req, storeId, orderId) {
+        const superAdminId = req.user?.userId ?? req.user;
+        await this.ensureMember(superAdminId, storeId, 'storekeepers');
+        return this.ordersService.getStoreOrderById(storeId, orderId);
+    }
+    async saAcceptOrder(req, storeId, orderId) {
+        const superAdminId = req.user?.userId ?? req.user;
+        await this.ensureMember(superAdminId, storeId, 'storekeepers');
+        return this.ordersService.acceptOrder(storeId, orderId);
+    }
+    async saRejectOrder(req, storeId, orderId) {
+        const superAdminId = req.user?.userId ?? req.user;
+        await this.ensureMember(superAdminId, storeId, 'storekeepers');
+        return this.ordersService.rejectOrder(storeId, orderId);
+    }
+    async saMarkOrderReady(req, storeId, orderId) {
+        const superAdminId = req.user?.userId ?? req.user;
+        await this.ensureMember(superAdminId, storeId, 'storekeepers');
+        return this.ordersService.markOrderReady(storeId, orderId);
+    }
+    async saAvailableDelivery(req, storeId, orderId) {
+        const superAdminId = req.user?.userId ?? req.user;
+        await this.ensureMember(superAdminId, storeId, 'storekeepers');
+        return this.ordersService.getAvailableDeliveryBoys(storeId, orderId);
+    }
+    async saGetDeliveryOrders(req, deliveryBoyId, mine, status) {
+        const superAdminId = req.user?.userId ?? req.user;
+        await this.ensureMember(superAdminId, deliveryBoyId, 'deliveryBoys');
+        if (mine === 'true') {
+            return this.ordersService.getMyJobs(deliveryBoyId);
+        }
+        if (status === 'READY') {
+            return this.ordersService.getAvailableJobs();
+        }
+        return [];
+    }
+    async saDeliveryMyJobs(req, deliveryBoyId) {
+        const superAdminId = req.user?.userId ?? req.user;
+        await this.ensureMember(superAdminId, deliveryBoyId, 'deliveryBoys');
+        return this.ordersService.getMyJobs(deliveryBoyId);
+    }
+    async saGetDeliveryOrder(req, deliveryBoyId, orderId) {
+        const superAdminId = req.user?.userId ?? req.user;
+        await this.ensureMember(superAdminId, deliveryBoyId, 'deliveryBoys');
+        return this.ordersService.getDeliveryOrderById(deliveryBoyId, orderId);
+    }
+    async saAcceptJob(req, deliveryBoyId, orderId) {
+        const superAdminId = req.user?.userId ?? req.user;
+        await this.ensureMember(superAdminId, deliveryBoyId, 'deliveryBoys');
+        return this.ordersService.acceptJob(deliveryBoyId, orderId);
+    }
+    async saPickupJob(req, deliveryBoyId, orderId) {
+        const superAdminId = req.user?.userId ?? req.user;
+        await this.ensureMember(superAdminId, deliveryBoyId, 'deliveryBoys');
+        return this.ordersService.pickupOrder(deliveryBoyId, orderId);
+    }
+    async saDeliverJob(req, deliveryBoyId, orderId) {
+        const superAdminId = req.user?.userId ?? req.user;
+        await this.ensureMember(superAdminId, deliveryBoyId, 'deliveryBoys');
+        return this.ordersService.deliverOrder(deliveryBoyId, orderId);
+    }
+    async saFailJob(req, deliveryBoyId, orderId) {
+        const superAdminId = req.user?.userId ?? req.user;
+        await this.ensureMember(superAdminId, deliveryBoyId, 'deliveryBoys');
+        return this.ordersService.failDelivery(deliveryBoyId, orderId);
     }
     async createStorekeeper(dto, req) {
         dto.role = role_enum_1.Role.ADMIN;
@@ -103,12 +244,242 @@ __decorate([
 ], SuperAdminController.prototype, "getStorekeepers", null);
 __decorate([
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.Get)('storekeepers/:userId'),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Param)('userId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:returntype", Promise)
+], SuperAdminController.prototype, "getStorekeeperDetail", null);
+__decorate([
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     (0, common_1.Get)('delivery-boys'),
     __param(0, (0, common_1.Req)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], SuperAdminController.prototype, "getDeliveryBoys", null);
+__decorate([
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.Get)('delivery-boys/:userId'),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Param)('userId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:returntype", Promise)
+], SuperAdminController.prototype, "getDeliveryBoyDetail", null);
+__decorate([
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.Get)('storekeepers/:storeId/products'),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Param)('storeId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:returntype", Promise)
+], SuperAdminController.prototype, "saGetStoreProducts", null);
+__decorate([
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.Post)('storekeepers/:storeId/products'),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Param)('storeId')),
+    __param(2, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String, Object]),
+    __metadata("design:returntype", Promise)
+], SuperAdminController.prototype, "saCreateProduct", null);
+__decorate([
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.Get)('storekeepers/:storeId/products/:id'),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Param)('storeId')),
+    __param(2, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String, String]),
+    __metadata("design:returntype", Promise)
+], SuperAdminController.prototype, "saGetStoreProduct", null);
+__decorate([
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.Put)('storekeepers/:storeId/products/:id'),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Param)('storeId')),
+    __param(2, (0, common_1.Param)('id')),
+    __param(3, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String, String, Object]),
+    __metadata("design:returntype", Promise)
+], SuperAdminController.prototype, "saUpdateProduct", null);
+__decorate([
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.Delete)('storekeepers/:storeId/products/:id'),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Param)('storeId')),
+    __param(2, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String, String]),
+    __metadata("design:returntype", Promise)
+], SuperAdminController.prototype, "saDeleteProduct", null);
+__decorate([
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.Post)('storekeepers/:storeId/products/:id/offer'),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Param)('storeId')),
+    __param(2, (0, common_1.Param)('id')),
+    __param(3, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String, String, Object]),
+    __metadata("design:returntype", Promise)
+], SuperAdminController.prototype, "saAddOffer", null);
+__decorate([
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.Delete)('storekeepers/:storeId/products/:id/offer'),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Param)('storeId')),
+    __param(2, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String, String]),
+    __metadata("design:returntype", Promise)
+], SuperAdminController.prototype, "saDeleteOffer", null);
+__decorate([
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.Patch)('storekeepers/:storeId/products/:id/stock'),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Param)('storeId')),
+    __param(2, (0, common_1.Param)('id')),
+    __param(3, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String, String, Object]),
+    __metadata("design:returntype", Promise)
+], SuperAdminController.prototype, "saUpdateStock", null);
+__decorate([
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.Get)('storekeepers/:storeId/orders'),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Param)('storeId')),
+    __param(2, (0, common_1.Query)('status')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String, String]),
+    __metadata("design:returntype", Promise)
+], SuperAdminController.prototype, "saGetStoreOrders", null);
+__decorate([
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.Get)('storekeepers/:storeId/orders/:id'),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Param)('storeId')),
+    __param(2, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String, String]),
+    __metadata("design:returntype", Promise)
+], SuperAdminController.prototype, "saGetStoreOrder", null);
+__decorate([
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.Post)('storekeepers/:storeId/orders/:id/accept'),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Param)('storeId')),
+    __param(2, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String, String]),
+    __metadata("design:returntype", Promise)
+], SuperAdminController.prototype, "saAcceptOrder", null);
+__decorate([
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.Post)('storekeepers/:storeId/orders/:id/reject'),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Param)('storeId')),
+    __param(2, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String, String]),
+    __metadata("design:returntype", Promise)
+], SuperAdminController.prototype, "saRejectOrder", null);
+__decorate([
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.Post)('storekeepers/:storeId/orders/:id/ready'),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Param)('storeId')),
+    __param(2, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String, String]),
+    __metadata("design:returntype", Promise)
+], SuperAdminController.prototype, "saMarkOrderReady", null);
+__decorate([
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.Get)('storekeepers/:storeId/orders/:id/available-delivery'),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Param)('storeId')),
+    __param(2, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String, String]),
+    __metadata("design:returntype", Promise)
+], SuperAdminController.prototype, "saAvailableDelivery", null);
+__decorate([
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.Get)('delivery-boys/:deliveryBoyId/orders'),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Param)('deliveryBoyId')),
+    __param(2, (0, common_1.Query)('mine')),
+    __param(3, (0, common_1.Query)('status')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String, String, String]),
+    __metadata("design:returntype", Promise)
+], SuperAdminController.prototype, "saGetDeliveryOrders", null);
+__decorate([
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.Get)('delivery-boys/:deliveryBoyId/orders/me'),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Param)('deliveryBoyId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:returntype", Promise)
+], SuperAdminController.prototype, "saDeliveryMyJobs", null);
+__decorate([
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.Get)('delivery-boys/:deliveryBoyId/orders/:id'),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Param)('deliveryBoyId')),
+    __param(2, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String, String]),
+    __metadata("design:returntype", Promise)
+], SuperAdminController.prototype, "saGetDeliveryOrder", null);
+__decorate([
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.Post)('delivery-boys/:deliveryBoyId/orders/:id/accept'),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Param)('deliveryBoyId')),
+    __param(2, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String, String]),
+    __metadata("design:returntype", Promise)
+], SuperAdminController.prototype, "saAcceptJob", null);
+__decorate([
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.Post)('delivery-boys/:deliveryBoyId/orders/:id/pickup'),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Param)('deliveryBoyId')),
+    __param(2, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String, String]),
+    __metadata("design:returntype", Promise)
+], SuperAdminController.prototype, "saPickupJob", null);
+__decorate([
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.Post)('delivery-boys/:deliveryBoyId/orders/:id/deliver'),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Param)('deliveryBoyId')),
+    __param(2, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String, String]),
+    __metadata("design:returntype", Promise)
+], SuperAdminController.prototype, "saDeliverJob", null);
+__decorate([
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.Post)('delivery-boys/:deliveryBoyId/orders/:id/fail'),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Param)('deliveryBoyId')),
+    __param(2, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String, String]),
+    __metadata("design:returntype", Promise)
+], SuperAdminController.prototype, "saFailJob", null);
 __decorate([
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     (0, common_1.Post)('create-storekeeper'),
@@ -129,9 +500,11 @@ __decorate([
 ], SuperAdminController.prototype, "createDeliveryBoy", null);
 exports.SuperAdminController = SuperAdminController = __decorate([
     (0, common_1.Controller)('super-admin/auth'),
-    __param(2, (0, mongoose_1.InjectModel)(super_admin_schema_1.SuperAdmin.name)),
+    __param(4, (0, mongoose_1.InjectModel)(super_admin_schema_1.SuperAdmin.name)),
     __metadata("design:paramtypes", [super_admin_service_1.SuperAdminService,
         auth_service_1.AuthService,
+        orders_service_1.OrdersService,
+        products_service_1.ProductsService,
         mongoose_2.Model])
 ], SuperAdminController);
 //# sourceMappingURL=super-admin.controller.js.map

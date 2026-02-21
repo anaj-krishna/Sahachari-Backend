@@ -9,10 +9,7 @@ async function bootstrap() {
     origin: '*',
     credentials: true,
   });
-
   setupApp(app);
-
   await app.listen(process.env.PORT || 3000, '0.0.0.0');
 }
-
 bootstrap().catch(console.error);
