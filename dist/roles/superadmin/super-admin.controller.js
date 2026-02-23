@@ -131,20 +131,10 @@ let SuperAdminController = class SuperAdminController {
         await this.ensureMember(superAdminId, storeId, 'storekeepers');
         return this.ordersService.getStoreOrderById(storeId, orderId);
     }
-    async saAcceptOrder(req, storeId, orderId) {
-        const superAdminId = req.user?.userId ?? req.user;
-        await this.ensureMember(superAdminId, storeId, 'storekeepers');
-        return this.ordersService.acceptOrder(storeId, orderId);
-    }
-    async saRejectOrder(req, storeId, orderId) {
-        const superAdminId = req.user?.userId ?? req.user;
-        await this.ensureMember(superAdminId, storeId, 'storekeepers');
-        return this.ordersService.rejectOrder(storeId, orderId);
-    }
     async saMarkOrderReady(req, storeId, orderId) {
         const superAdminId = req.user?.userId ?? req.user;
         await this.ensureMember(superAdminId, storeId, 'storekeepers');
-        return this.ordersService.markOrderReady(storeId, orderId);
+        return this.ordersService.updateOrderStatus(orderId, 'READY', storeId, 'STOREKEEPER');
     }
     async saAvailableDelivery(req, storeId, orderId) {
         const superAdminId = req.user?.userId ?? req.user;
@@ -175,22 +165,22 @@ let SuperAdminController = class SuperAdminController {
     async saAcceptJob(req, deliveryBoyId, orderId) {
         const superAdminId = req.user?.userId ?? req.user;
         await this.ensureMember(superAdminId, deliveryBoyId, 'deliveryBoys');
-        return this.ordersService.acceptJob(deliveryBoyId, orderId);
+        return this.ordersService.updateOrderStatus(orderId, 'ACCEPTED', deliveryBoyId, 'DELIVERY');
     }
     async saPickupJob(req, deliveryBoyId, orderId) {
         const superAdminId = req.user?.userId ?? req.user;
         await this.ensureMember(superAdminId, deliveryBoyId, 'deliveryBoys');
-        return this.ordersService.pickupOrder(deliveryBoyId, orderId);
+        return this.ordersService.updateOrderStatus(orderId, 'PICKED_UP', deliveryBoyId, 'DELIVERY');
     }
     async saDeliverJob(req, deliveryBoyId, orderId) {
         const superAdminId = req.user?.userId ?? req.user;
         await this.ensureMember(superAdminId, deliveryBoyId, 'deliveryBoys');
-        return this.ordersService.deliverOrder(deliveryBoyId, orderId);
+        return this.ordersService.updateOrderStatus(orderId, 'DELIVERED', deliveryBoyId, 'DELIVERY');
     }
     async saFailJob(req, deliveryBoyId, orderId) {
         const superAdminId = req.user?.userId ?? req.user;
         await this.ensureMember(superAdminId, deliveryBoyId, 'deliveryBoys');
-        return this.ordersService.failDelivery(deliveryBoyId, orderId);
+        return this.ordersService.updateOrderStatus(orderId, 'FAILED', deliveryBoyId, 'DELIVERY');
     }
     async createStorekeeper(dto, req) {
         dto.role = role_enum_1.Role.ADMIN;
@@ -370,26 +360,6 @@ __decorate([
     __metadata("design:paramtypes", [Object, String, String]),
     __metadata("design:returntype", Promise)
 ], SuperAdminController.prototype, "saGetStoreOrder", null);
-__decorate([
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
-    (0, common_1.Post)('storekeepers/:storeId/orders/:id/accept'),
-    __param(0, (0, common_1.Req)()),
-    __param(1, (0, common_1.Param)('storeId')),
-    __param(2, (0, common_1.Param)('id')),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, String, String]),
-    __metadata("design:returntype", Promise)
-], SuperAdminController.prototype, "saAcceptOrder", null);
-__decorate([
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
-    (0, common_1.Post)('storekeepers/:storeId/orders/:id/reject'),
-    __param(0, (0, common_1.Req)()),
-    __param(1, (0, common_1.Param)('storeId')),
-    __param(2, (0, common_1.Param)('id')),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, String, String]),
-    __metadata("design:returntype", Promise)
-], SuperAdminController.prototype, "saRejectOrder", null);
 __decorate([
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     (0, common_1.Post)('storekeepers/:storeId/orders/:id/ready'),

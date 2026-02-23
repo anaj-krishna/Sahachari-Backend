@@ -61,6 +61,9 @@ let CustomerController = class CustomerController {
     removeCartItem(req, itemId) {
         return this.cartService.removeItem(req.user.userId, itemId);
     }
+    updateCartItemQuantity(req, itemId, quantity) {
+        return this.cartService.updateQuantity(req.user.userId, itemId, quantity);
+    }
     placeOrder(req, dto) {
         return this.ordersService.placeOrder(req.user.userId, dto);
     }
@@ -74,7 +77,7 @@ let CustomerController = class CustomerController {
         return this.ordersService.getOrderById(req.user.userId, orderId);
     }
     cancelOrder(req, orderId) {
-        return this.ordersService.cancelOrder(req.user.userId, orderId);
+        return this.ordersService.updateOrderStatus(orderId, 'CANCELLED', req.user.userId, 'CUSTOMER');
     }
 };
 exports.CustomerController = CustomerController;
@@ -137,6 +140,15 @@ __decorate([
     __metadata("design:paramtypes", [Object, String]),
     __metadata("design:returntype", void 0)
 ], CustomerController.prototype, "removeCartItem", null);
+__decorate([
+    (0, common_1.Patch)('cart/:itemId'),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Param)('itemId')),
+    __param(2, (0, common_1.Body)('quantity')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String, Number]),
+    __metadata("design:returntype", void 0)
+], CustomerController.prototype, "updateCartItemQuantity", null);
 __decorate([
     (0, common_1.Post)('orders'),
     __param(0, (0, common_1.Req)()),

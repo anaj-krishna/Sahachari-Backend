@@ -48,13 +48,7 @@ export declare class OrdersService {
     } & {
         id: string;
     }>;
-    cancelOrder(userId: string, orderId: string): Promise<import("mongoose").Document<unknown, {}, OrderDocument, {}, import("mongoose").DefaultSchemaOptions> & Order & import("mongoose").Document<Types.ObjectId, any, any, Record<string, any>, {}> & Required<{
-        _id: Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
-    }>;
+    updateOrderStatus(orderId: string, newStatus: string, userId: string, userRole?: 'CUSTOMER' | 'STOREKEEPER' | 'DELIVERY'): Promise<OrderDocument>;
     getOrdersByStore(storeId: string, status?: string): Promise<(import("mongoose").Document<unknown, {}, OrderDocument, {}, import("mongoose").DefaultSchemaOptions> & Order & import("mongoose").Document<Types.ObjectId, any, any, Record<string, any>, {}> & Required<{
         _id: Types.ObjectId;
     }> & {
@@ -63,27 +57,6 @@ export declare class OrdersService {
         id: string;
     })[]>;
     getStoreOrderById(storeId: string, orderId: string): Promise<import("mongoose").Document<unknown, {}, OrderDocument, {}, import("mongoose").DefaultSchemaOptions> & Order & import("mongoose").Document<Types.ObjectId, any, any, Record<string, any>, {}> & Required<{
-        _id: Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
-    }>;
-    acceptOrder(storeId: string, orderId: string): Promise<import("mongoose").Document<unknown, {}, OrderDocument, {}, import("mongoose").DefaultSchemaOptions> & Order & import("mongoose").Document<Types.ObjectId, any, any, Record<string, any>, {}> & Required<{
-        _id: Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
-    }>;
-    rejectOrder(storeId: string, orderId: string): Promise<import("mongoose").Document<unknown, {}, OrderDocument, {}, import("mongoose").DefaultSchemaOptions> & Order & import("mongoose").Document<Types.ObjectId, any, any, Record<string, any>, {}> & Required<{
-        _id: Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
-    }>;
-    markOrderReady(storeId: string, orderId: string): Promise<import("mongoose").Document<unknown, {}, OrderDocument, {}, import("mongoose").DefaultSchemaOptions> & Order & import("mongoose").Document<Types.ObjectId, any, any, Record<string, any>, {}> & Required<{
         _id: Types.ObjectId;
     }> & {
         __v: number;
@@ -110,34 +83,6 @@ export declare class OrdersService {
         id: string;
     })[]>;
     getDeliveryOrderById(deliveryBoyId: string, orderId: string): Promise<import("mongoose").Document<unknown, {}, OrderDocument, {}, import("mongoose").DefaultSchemaOptions> & Order & import("mongoose").Document<Types.ObjectId, any, any, Record<string, any>, {}> & Required<{
-        _id: Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
-    }>;
-    acceptJob(deliveryBoyId: string, orderId: string): Promise<import("mongoose").Document<unknown, {}, OrderDocument, {}, import("mongoose").DefaultSchemaOptions> & Order & import("mongoose").Document<Types.ObjectId, any, any, Record<string, any>, {}> & Required<{
-        _id: Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
-    }>;
-    pickupOrder(deliveryBoyId: string, orderId: string): Promise<import("mongoose").Document<unknown, {}, OrderDocument, {}, import("mongoose").DefaultSchemaOptions> & Order & import("mongoose").Document<Types.ObjectId, any, any, Record<string, any>, {}> & Required<{
-        _id: Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
-    }>;
-    deliverOrder(deliveryBoyId: string, orderId: string): Promise<import("mongoose").Document<unknown, {}, OrderDocument, {}, import("mongoose").DefaultSchemaOptions> & Order & import("mongoose").Document<Types.ObjectId, any, any, Record<string, any>, {}> & Required<{
-        _id: Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
-    }>;
-    failDelivery(deliveryBoyId: string, orderId: string): Promise<import("mongoose").Document<unknown, {}, OrderDocument, {}, import("mongoose").DefaultSchemaOptions> & Order & import("mongoose").Document<Types.ObjectId, any, any, Record<string, any>, {}> & Required<{
         _id: Types.ObjectId;
     }> & {
         __v: number;

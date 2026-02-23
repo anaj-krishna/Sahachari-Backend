@@ -107,6 +107,17 @@ export declare class CustomerController {
     } & {
         id: string;
     }>;
+    updateCartItemQuantity(req: Request & {
+        user: {
+            userId: string;
+        };
+    }, itemId: string, quantity: number): Promise<import("mongoose").Document<unknown, {}, import("../../cart/cart.schema").CartDocument, {}, import("mongoose").DefaultSchemaOptions> & import("../../cart/cart.schema").Cart & import("mongoose").Document<import("mongoose").Types.ObjectId, any, any, Record<string, any>, {}> & Required<{
+        _id: import("mongoose").Types.ObjectId;
+    }> & {
+        __v: number;
+    } & {
+        id: string;
+    }>;
     placeOrder(req: Request & {
         user: {
             userId: string;
@@ -153,11 +164,5 @@ export declare class CustomerController {
         user: {
             userId: string;
         };
-    }, orderId: string): Promise<import("mongoose").Document<unknown, {}, import("../../orders/order.schema").OrderDocument, {}, import("mongoose").DefaultSchemaOptions> & import("../../orders/order.schema").Order & import("mongoose").Document<import("mongoose").Types.ObjectId, any, any, Record<string, any>, {}> & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
-    }>;
+    }, orderId: string): Promise<import("../../orders/order.schema").OrderDocument>;
 }

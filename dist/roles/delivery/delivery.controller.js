@@ -40,16 +40,16 @@ let DeliveryController = class DeliveryController {
         return this.ordersService.getDeliveryOrderById(req.user.userId, orderId);
     }
     async accept(orderId, req) {
-        return this.ordersService.acceptJob(req.user.userId, orderId);
+        return this.ordersService.updateOrderStatus(orderId, 'ACCEPTED', req.user.userId, 'DELIVERY');
     }
     async pickup(orderId, req) {
-        return this.ordersService.pickupOrder(req.user.userId, orderId);
+        return this.ordersService.updateOrderStatus(orderId, 'PICKED_UP', req.user.userId, 'DELIVERY');
     }
     async deliver(orderId, req) {
-        return this.ordersService.deliverOrder(req.user.userId, orderId);
+        return this.ordersService.updateOrderStatus(orderId, 'DELIVERED', req.user.userId, 'DELIVERY');
     }
     async fail(orderId, req) {
-        return this.ordersService.failDelivery(req.user.userId, orderId);
+        return this.ordersService.updateOrderStatus(orderId, 'FAILED', req.user.userId, 'DELIVERY');
     }
 };
 exports.DeliveryController = DeliveryController;

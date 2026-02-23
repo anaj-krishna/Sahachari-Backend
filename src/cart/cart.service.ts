@@ -22,11 +22,9 @@ export class CartService {
     if (!userId) throw new BadRequestException('userId missing');
 
     const userObjectId = new Types.ObjectId(userId);
-
     const cart = await this.cartModel
       .findOne({ userId: userObjectId })
       .populate('items.productId');
-
     return cart ?? { userId, items: [] };
   }
 

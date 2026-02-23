@@ -1,8 +1,5 @@
-/* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable prettier/prettier */
-/* eslint-disable @typescript-eslint/no-unsafe-return */
 import {
   Controller,
   Get,
@@ -13,6 +10,7 @@ import {
   Req,
   Query,
   UseGuards,
+  Patch,
 } from '@nestjs/common';
 import { Request } from 'express';
 
@@ -103,7 +101,14 @@ export class CustomerController {
   ) {
     return this.cartService.removeItem(req.user.userId, itemId);
   }
-
+  @Patch('cart/:itemId')
+  updateCartItemQuantity(
+    @Req() req: Request & { user: { userId: string } },
+    @Param('itemId') itemId: string,
+    @Body('quantity') quantity: number,
+  ) {
+    return this.cartService.updateQuantity(req.user.userId, itemId, quantity);
+  }
   /* ================= ORDERS ================= */
 
   @Post('orders')
@@ -137,6 +142,11 @@ export class CustomerController {
     @Req() req: Request & { user: { userId: string } },
     @Param('id') orderId: string,
   ) {
-    return this.ordersService.cancelOrder(req.user.userId, orderId);
+    return this.ordersService.updateOrderStatus(
+      orderId,
+      'CANCELLED',
+      req.user.userId,
+      'CUSTOMER',
+    );
   }
 }

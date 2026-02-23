@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable prettier/prettier */
 import {
   Injectable,
@@ -192,25 +191,102 @@ export class OrdersService {
     return order;
   }
 
-  // CANCEL ORDER (only if not delivered)
-  async cancelOrder(userId: string, orderId: string) {
-    const order = await this.orderModel.findOneAndUpdate(
-      {
-        _id: orderId,
-        userId: new Types.ObjectId(userId),
-        status: { $ne: 'DELIVERED' },
+  // GENERIC STATUS TRANSITION - Single function for all controllers
+  async updateOrderStatus(
+    orderId: string,
+    newStatus: string,
+    userId: string,
+    userRole: 'CUSTOMER' | 'STOREKEEPER' | 'DELIVERY' = 'CUSTOMER',
+  ): Promise<OrderDocument> {
+    // Define allowed transitions by role
+    const transitionRules: Record<string, Record<string, string[]>> = {
+      CUSTOMER: {
+        CANCELLED: ['PLACED', 'ACCEPTED', 'READY'], // Can cancel until picked up
       },
-      {
-        $set: { status: 'CANCELLED' },
+      STOREKEEPER: {
+        READY: ['PLACED'], // Storekeeper marks order as ready for delivery
       },
-      { new: true },
-    );
+      DELIVERY: {
+        ACCEPTED: ['READY'], // Delivery boy accepts job
+        PICKED_UP: ['ACCEPTED'], // Picked up from store
+        DELIVERED: ['PICKED_UP'], // Delivered to customer
+        FAILED: ['PICKED_UP'], // Failed delivery
+      },
+    };
 
+    // Get the order first
+    const order = await this.orderModel.findById(orderId);
     if (!order) {
-      throw new NotFoundException('Order not found or cannot be cancelled');
+      throw new NotFoundException('Order not found');
     }
 
-    return order;
+    // Build query based on role
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    const query: Record<string, any> = { _id: orderId };
+
+    // Validate permissions and transitions
+    if (userRole === 'CUSTOMER') {
+      query.userId = new Types.ObjectId(userId);
+      // Can only cancel their own orders
+      if (newStatus === 'CANCELLED' && !transitionRules.CUSTOMER.CANCELLED.includes(order.status)) {
+        throw new BadRequestException(
+          `Cannot cancel order with status ${order.status}`,
+        );
+      }
+    } else if (userRole === 'STOREKEEPER') {
+      query.storeId = new Types.ObjectId(userId);
+      // Validate transition is allowed for storekeeper
+      if (!transitionRules.STOREKEEPER[newStatus]?.includes(order.status)) {
+        throw new BadRequestException(
+          `Cannot transition from ${order.status} to ${newStatus}`,
+        );
+      }
+    } else if (userRole === 'DELIVERY') {
+      query.deliveryBoyId = new Types.ObjectId(userId);
+      // Delivery boy can only work on assigned orders (except ACCEPTED which assigns them)
+      if (newStatus !== 'ACCEPTED' && !order.deliveryBoyId?.equals(new Types.ObjectId(userId))) {
+        throw new BadRequestException('Order not assigned to you');
+      }
+      // Validate transition
+      if (!transitionRules.DELIVERY[newStatus]?.includes(order.status)) {
+        throw new BadRequestException(
+          `Cannot transition from ${order.status} to ${newStatus}`,
+        );
+      }
+    }
+
+    // Add status condition for non-DELIVERY role or when transitioning from READY
+    if (userRole !== 'DELIVERY' || newStatus === 'ACCEPTED') {
+      query.status = transitionRules[userRole][newStatus]?.[0] || order.status;
+    } else {
+      query.status = transitionRules.DELIVERY[newStatus]?.[0];
+    }
+
+    // Build update object
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    const updateObj: Record<string, any> = { $set: { status: newStatus } };
+
+    // Special case: Delivery boy accepts job (assign deliveryBoyId)
+    if (userRole === 'DELIVERY' && newStatus === 'ACCEPTED') {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+      updateObj.$set.deliveryBoyId = new Types.ObjectId(userId);
+      // For ACCEPTED transition from DELIVERY, query must check deliveryBoyId is null
+      query.deliveryBoyId = null;
+    }
+
+    // Execute update
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    const updatedOrder = await this.orderModel.findOneAndUpdate(query, updateObj, {
+      new: true,
+    });
+
+    if (!updatedOrder) {
+      throw new NotFoundException(
+        `Order not found or cannot transition to ${newStatus}`,
+      );
+    }
+
+    return updatedOrder;
   }
 
   /* ================= STOREKEEPER OPERATIONS ================= */
@@ -244,68 +320,7 @@ export class OrdersService {
     return order;
   }
 
-  // ACCEPT ORDER
-  async acceptOrder(storeId: string, orderId: string) {
-    const order = await this.orderModel.findOneAndUpdate(
-      {
-        _id: orderId,
-        storeId: new Types.ObjectId(storeId),
-        status: 'PLACED',
-      },
-      {
-        $set: { status: 'ACCEPTED' },
-      },
-      { new: true },
-    );
 
-    if (!order) {
-      throw new NotFoundException('Order not found or cannot be accepted');
-    }
-
-    return order;
-  }
-
-  // REJECT ORDER
-  async rejectOrder(storeId: string, orderId: string) {
-    const order = await this.orderModel.findOneAndUpdate(
-      {
-        _id: orderId,
-        storeId: new Types.ObjectId(storeId),
-        status: 'PLACED',
-      },
-      {
-        $set: { status: 'REJECTED' },
-      },
-      { new: true },
-    );
-
-    if (!order) {
-      throw new NotFoundException('Order not found or cannot be rejected');
-    }
-
-    return order;
-  }
-
-  // MARK ORDER AS READY
-  async markOrderReady(storeId: string, orderId: string) {
-    const order = await this.orderModel.findOneAndUpdate(
-      {
-        _id: orderId,
-        storeId: new Types.ObjectId(storeId),
-        status: 'ACCEPTED',
-      },
-      {
-        $set: { status: 'READY' },
-      },
-      { new: true },
-    );
-
-    if (!order) {
-      throw new NotFoundException('Order not found or not in ACCEPTED status');
-    }
-
-    return order;
-  }
 
   // GET AVAILABLE DELIVERY BOYS (placeholder - needs user service)
   async getAvailableDeliveryBoys(storeId: string, orderId: string) {
@@ -374,95 +389,4 @@ export class OrdersService {
     return order;
   }
 
-  // ACCEPT JOB (READY → ACCEPTED, assign deliveryBoyId)
-  async acceptJob(deliveryBoyId: string, orderId: string) {
-    const order = await this.orderModel.findOneAndUpdate(
-      {
-        _id: orderId,
-        status: 'READY',
-        deliveryBoyId: null,
-      },
-      {
-        $set: {
-          status: 'ACCEPTED',
-          deliveryBoyId: new Types.ObjectId(deliveryBoyId),
-        },
-      },
-      { new: true },
-    );
-
-    if (!order) {
-      throw new NotFoundException(
-        'Order not found, already assigned, or not in READY status',
-      );
-    }
-
-    return order;
-  }
-
-  // PICKUP (ACCEPTED → PICKED_UP)
-  async pickupOrder(deliveryBoyId: string, orderId: string) {
-    const order = await this.orderModel.findOneAndUpdate(
-      {
-        _id: orderId,
-        deliveryBoyId: new Types.ObjectId(deliveryBoyId),
-        status: 'ACCEPTED',
-      },
-      {
-        $set: { status: 'PICKED_UP' },
-      },
-      { new: true },
-    );
-
-    if (!order) {
-      throw new NotFoundException(
-        'Order not found, not assigned to you, or not in ACCEPTED status',
-      );
-    }
-
-    return order;
-  }
-
-  // DELIVER (PICKED_UP → DELIVERED)
-  async deliverOrder(deliveryBoyId: string, orderId: string) {
-    const order = await this.orderModel.findOneAndUpdate(
-      {
-        _id: orderId,
-        deliveryBoyId: new Types.ObjectId(deliveryBoyId),
-        status: 'PICKED_UP',
-      },
-      {
-        $set: { status: 'DELIVERED' },
-      },
-      { new: true },
-    );
-
-    if (!order) {
-      throw new NotFoundException(
-        'Order not found, not assigned to you, or not in PICKED_UP status',
-      );
-    }
-
-    return order;
-  }
-  // FAIL DELIVERY (PICKED_UP → FAILED)
-  async failDelivery(deliveryBoyId: string, orderId: string) {
-    const order = await this.orderModel.findOneAndUpdate(
-      {
-        _id: orderId,
-        deliveryBoyId: new Types.ObjectId(deliveryBoyId),
-        status: 'PICKED_UP',
-      },
-      {
-        $set: { status: 'FAILED' },
-      },
-      { new: true },
-    );
-    if (!order) {
-      throw new NotFoundException(
-        'Order not found, not assigned to you, or not in PICKED_UP status',
-      );
-    }
-    return order;
-  }
 }

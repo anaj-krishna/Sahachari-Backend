@@ -117,27 +117,7 @@ export declare class SuperAdminController {
     } & {
         id: string;
     }>;
-    saAcceptOrder(req: any, storeId: string, orderId: string): Promise<import("mongoose").Document<unknown, {}, import("../../orders/order.schema").OrderDocument, {}, import("mongoose").DefaultSchemaOptions> & import("../../orders/order.schema").Order & import("mongoose").Document<Types.ObjectId, any, any, Record<string, any>, {}> & Required<{
-        _id: Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
-    }>;
-    saRejectOrder(req: any, storeId: string, orderId: string): Promise<import("mongoose").Document<unknown, {}, import("../../orders/order.schema").OrderDocument, {}, import("mongoose").DefaultSchemaOptions> & import("../../orders/order.schema").Order & import("mongoose").Document<Types.ObjectId, any, any, Record<string, any>, {}> & Required<{
-        _id: Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
-    }>;
-    saMarkOrderReady(req: any, storeId: string, orderId: string): Promise<import("mongoose").Document<unknown, {}, import("../../orders/order.schema").OrderDocument, {}, import("mongoose").DefaultSchemaOptions> & import("../../orders/order.schema").Order & import("mongoose").Document<Types.ObjectId, any, any, Record<string, any>, {}> & Required<{
-        _id: Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
-    }>;
+    saMarkOrderReady(req: any, storeId: string, orderId: string): Promise<import("../../orders/order.schema").OrderDocument>;
     saAvailableDelivery(req: any, storeId: string, orderId: string): Promise<{
         orderId: string;
         availableDeliveryBoys: never[];
@@ -164,34 +144,10 @@ export declare class SuperAdminController {
     } & {
         id: string;
     }>;
-    saAcceptJob(req: any, deliveryBoyId: string, orderId: string): Promise<import("mongoose").Document<unknown, {}, import("../../orders/order.schema").OrderDocument, {}, import("mongoose").DefaultSchemaOptions> & import("../../orders/order.schema").Order & import("mongoose").Document<Types.ObjectId, any, any, Record<string, any>, {}> & Required<{
-        _id: Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
-    }>;
-    saPickupJob(req: any, deliveryBoyId: string, orderId: string): Promise<import("mongoose").Document<unknown, {}, import("../../orders/order.schema").OrderDocument, {}, import("mongoose").DefaultSchemaOptions> & import("../../orders/order.schema").Order & import("mongoose").Document<Types.ObjectId, any, any, Record<string, any>, {}> & Required<{
-        _id: Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
-    }>;
-    saDeliverJob(req: any, deliveryBoyId: string, orderId: string): Promise<import("mongoose").Document<unknown, {}, import("../../orders/order.schema").OrderDocument, {}, import("mongoose").DefaultSchemaOptions> & import("../../orders/order.schema").Order & import("mongoose").Document<Types.ObjectId, any, any, Record<string, any>, {}> & Required<{
-        _id: Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
-    }>;
-    saFailJob(req: any, deliveryBoyId: string, orderId: string): Promise<import("mongoose").Document<unknown, {}, import("../../orders/order.schema").OrderDocument, {}, import("mongoose").DefaultSchemaOptions> & import("../../orders/order.schema").Order & import("mongoose").Document<Types.ObjectId, any, any, Record<string, any>, {}> & Required<{
-        _id: Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
-    }>;
+    saAcceptJob(req: any, deliveryBoyId: string, orderId: string): Promise<import("../../orders/order.schema").OrderDocument>;
+    saPickupJob(req: any, deliveryBoyId: string, orderId: string): Promise<import("../../orders/order.schema").OrderDocument>;
+    saDeliverJob(req: any, deliveryBoyId: string, orderId: string): Promise<import("../../orders/order.schema").OrderDocument>;
+    saFailJob(req: any, deliveryBoyId: string, orderId: string): Promise<import("../../orders/order.schema").OrderDocument>;
     createStorekeeper(dto: RegisterDto, req: any): Promise<{
         id: string;
         email: string;

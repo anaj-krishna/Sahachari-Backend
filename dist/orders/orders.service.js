@@ -153,18 +153,65 @@ let OrdersService = class OrdersService {
             throw new common_1.NotFoundException('Order not found');
         return order;
     }
-    async cancelOrder(userId, orderId) {
-        const order = await this.orderModel.findOneAndUpdate({
-            _id: orderId,
-            userId: new mongoose_2.Types.ObjectId(userId),
-            status: { $ne: 'DELIVERED' },
-        }, {
-            $set: { status: 'CANCELLED' },
-        }, { new: true });
+    async updateOrderStatus(orderId, newStatus, userId, userRole = 'CUSTOMER') {
+        const transitionRules = {
+            CUSTOMER: {
+                CANCELLED: ['PLACED', 'ACCEPTED', 'READY'],
+            },
+            STOREKEEPER: {
+                READY: ['PLACED'],
+            },
+            DELIVERY: {
+                ACCEPTED: ['READY'],
+                PICKED_UP: ['ACCEPTED'],
+                DELIVERED: ['PICKED_UP'],
+                FAILED: ['PICKED_UP'],
+            },
+        };
+        const order = await this.orderModel.findById(orderId);
         if (!order) {
-            throw new common_1.NotFoundException('Order not found or cannot be cancelled');
+            throw new common_1.NotFoundException('Order not found');
         }
-        return order;
+        const query = { _id: orderId };
+        if (userRole === 'CUSTOMER') {
+            query.userId = new mongoose_2.Types.ObjectId(userId);
+            if (newStatus === 'CANCELLED' && !transitionRules.CUSTOMER.CANCELLED.includes(order.status)) {
+                throw new common_1.BadRequestException(`Cannot cancel order with status ${order.status}`);
+            }
+        }
+        else if (userRole === 'STOREKEEPER') {
+            query.storeId = new mongoose_2.Types.ObjectId(userId);
+            if (!transitionRules.STOREKEEPER[newStatus]?.includes(order.status)) {
+                throw new common_1.BadRequestException(`Cannot transition from ${order.status} to ${newStatus}`);
+            }
+        }
+        else if (userRole === 'DELIVERY') {
+            query.deliveryBoyId = new mongoose_2.Types.ObjectId(userId);
+            if (newStatus !== 'ACCEPTED' && !order.deliveryBoyId?.equals(new mongoose_2.Types.ObjectId(userId))) {
+                throw new common_1.BadRequestException('Order not assigned to you');
+            }
+            if (!transitionRules.DELIVERY[newStatus]?.includes(order.status)) {
+                throw new common_1.BadRequestException(`Cannot transition from ${order.status} to ${newStatus}`);
+            }
+        }
+        if (userRole !== 'DELIVERY' || newStatus === 'ACCEPTED') {
+            query.status = transitionRules[userRole][newStatus]?.[0] || order.status;
+        }
+        else {
+            query.status = transitionRules.DELIVERY[newStatus]?.[0];
+        }
+        const updateObj = { $set: { status: newStatus } };
+        if (userRole === 'DELIVERY' && newStatus === 'ACCEPTED') {
+            updateObj.$set.deliveryBoyId = new mongoose_2.Types.ObjectId(userId);
+            query.deliveryBoyId = null;
+        }
+        const updatedOrder = await this.orderModel.findOneAndUpdate(query, updateObj, {
+            new: true,
+        });
+        if (!updatedOrder) {
+            throw new common_1.NotFoundException(`Order not found or cannot transition to ${newStatus}`);
+        }
+        return updatedOrder;
     }
     async getOrdersByStore(storeId, status) {
         const query = {
@@ -189,45 +236,6 @@ let OrdersService = class OrdersService {
             .populate('userId', 'name email phone');
         if (!order)
             throw new common_1.NotFoundException('Order not found');
-        return order;
-    }
-    async acceptOrder(storeId, orderId) {
-        const order = await this.orderModel.findOneAndUpdate({
-            _id: orderId,
-            storeId: new mongoose_2.Types.ObjectId(storeId),
-            status: 'PLACED',
-        }, {
-            $set: { status: 'ACCEPTED' },
-        }, { new: true });
-        if (!order) {
-            throw new common_1.NotFoundException('Order not found or cannot be accepted');
-        }
-        return order;
-    }
-    async rejectOrder(storeId, orderId) {
-        const order = await this.orderModel.findOneAndUpdate({
-            _id: orderId,
-            storeId: new mongoose_2.Types.ObjectId(storeId),
-            status: 'PLACED',
-        }, {
-            $set: { status: 'REJECTED' },
-        }, { new: true });
-        if (!order) {
-            throw new common_1.NotFoundException('Order not found or cannot be rejected');
-        }
-        return order;
-    }
-    async markOrderReady(storeId, orderId) {
-        const order = await this.orderModel.findOneAndUpdate({
-            _id: orderId,
-            storeId: new mongoose_2.Types.ObjectId(storeId),
-            status: 'ACCEPTED',
-        }, {
-            $set: { status: 'READY' },
-        }, { new: true });
-        if (!order) {
-            throw new common_1.NotFoundException('Order not found or not in ACCEPTED status');
-        }
         return order;
     }
     async getAvailableDeliveryBoys(storeId, orderId) {
@@ -278,61 +286,6 @@ let OrdersService = class OrdersService {
             .populate('deliveryBoyId', 'name phone');
         if (!order) {
             throw new common_1.NotFoundException('Order not found or not assigned to you');
-        }
-        return order;
-    }
-    async acceptJob(deliveryBoyId, orderId) {
-        const order = await this.orderModel.findOneAndUpdate({
-            _id: orderId,
-            status: 'READY',
-            deliveryBoyId: null,
-        }, {
-            $set: {
-                status: 'ACCEPTED',
-                deliveryBoyId: new mongoose_2.Types.ObjectId(deliveryBoyId),
-            },
-        }, { new: true });
-        if (!order) {
-            throw new common_1.NotFoundException('Order not found, already assigned, or not in READY status');
-        }
-        return order;
-    }
-    async pickupOrder(deliveryBoyId, orderId) {
-        const order = await this.orderModel.findOneAndUpdate({
-            _id: orderId,
-            deliveryBoyId: new mongoose_2.Types.ObjectId(deliveryBoyId),
-            status: 'ACCEPTED',
-        }, {
-            $set: { status: 'PICKED_UP' },
-        }, { new: true });
-        if (!order) {
-            throw new common_1.NotFoundException('Order not found, not assigned to you, or not in ACCEPTED status');
-        }
-        return order;
-    }
-    async deliverOrder(deliveryBoyId, orderId) {
-        const order = await this.orderModel.findOneAndUpdate({
-            _id: orderId,
-            deliveryBoyId: new mongoose_2.Types.ObjectId(deliveryBoyId),
-            status: 'PICKED_UP',
-        }, {
-            $set: { status: 'DELIVERED' },
-        }, { new: true });
-        if (!order) {
-            throw new common_1.NotFoundException('Order not found, not assigned to you, or not in PICKED_UP status');
-        }
-        return order;
-    }
-    async failDelivery(deliveryBoyId, orderId) {
-        const order = await this.orderModel.findOneAndUpdate({
-            _id: orderId,
-            deliveryBoyId: new mongoose_2.Types.ObjectId(deliveryBoyId),
-            status: 'PICKED_UP',
-        }, {
-            $set: { status: 'FAILED' },
-        }, { new: true });
-        if (!order) {
-            throw new common_1.NotFoundException('Order not found, not assigned to you, or not in PICKED_UP status');
         }
         return order;
     }
