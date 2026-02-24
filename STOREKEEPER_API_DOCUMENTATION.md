@@ -386,7 +386,7 @@ Authorization: Bearer YOUR_JWT_TOKEN
 ```
 
 **Query Parameters:**
-- `status` (optional): Filter by order status (PLACED, ACCEPTED, REJECTED, READY, DELIVERED, CANCELLED)
+- `status` (optional): Filter by order status (PLACED, READY, ACCEPTED, PICKED_UP, DELIVERED, FAILED, CANCELLED)
 
 **Examples:**
 ```
@@ -480,83 +480,7 @@ GET /storekeeper/orders/65f4a3c9d1e2f3g4h5i6j7k8
 
 ## Order Actions
 
-### 1. Accept Order
-**Endpoint:** `POST /storekeeper/orders/:id/accept`
-
-**Headers:**
-```
-Authorization: Bearer YOUR_JWT_TOKEN
-```
-
-**URL Parameters:**
-- `id`: Order MongoDB ID
-
-**Example:**
-```
-POST /storekeeper/orders/65f4a3c9d1e2f3g4h5i6j7k8/accept
-```
-
-**Precondition:**
-- Order status must be `PLACED`
-
-**Response:** `200 OK`
-```json
-{
-  "_id": "65f4a3c9d1e2f3g4h5i6j7k8",
-  "status": "ACCEPTED",
-  "updatedAt": "2025-01-19T10:05:00.000Z"
-}
-```
-
-**Error Response:**
-```json
-{
-  "statusCode": 404,
-  "message": "Order not found or cannot be accepted"
-}
-```
-
----
-
-### 2. Reject Order
-**Endpoint:** `POST /storekeeper/orders/:id/reject`
-
-**Headers:**
-```
-Authorization: Bearer YOUR_JWT_TOKEN
-```
-
-**URL Parameters:**
-- `id`: Order MongoDB ID
-
-**Example:**
-```
-POST /storekeeper/orders/65f4a3c9d1e2f3g4h5i6j7k8/reject
-```
-
-**Precondition:**
-- Order status must be `PLACED`
-
-**Response:** `200 OK`
-```json
-{
-  "_id": "65f4a3c9d1e2f3g4h5i6j7k8",
-  "status": "REJECTED",
-  "updatedAt": "2025-01-19T10:05:00.000Z"
-}
-```
-
-**Error Response:**
-```json
-{
-  "statusCode": 404,
-  "message": "Order not found or cannot be rejected"
-}
-```
-
----
-
-### 3. Mark Order as Ready
+### 1. Mark Order as Ready
 **Endpoint:** `POST /storekeeper/orders/:id/ready`
 
 **Headers:**
@@ -616,24 +540,12 @@ GET /storekeeper/orders/65f4a3c9d1e2f3g4h5i6j7k8/available-delivery
 ```json
 {
   "orderId": "65f4a3c9d1e2f3g4h5i6j7k8",
-  "availableDeliveryBoys": [
-    {
-      "_id": "delivery_1",
-      "name": "Ahmed Ali",
-      "phone": "+1-234-567-8901",
-      "status": "available"
-    },
-    {
-      "_id": "delivery_2",
-      "name": "Muhammad Hassan",
-      "phone": "+1-234-567-8902",
-      "status": "available"
-    }
-  ]
+  "availableDeliveryBoys": [],
+  "message": "Delivery boy list not yet configured"
 }
 ```
 
-**Note:** Currently returns empty list. Will be implemented when user service integration is complete.
+**Note:** This is currently a placeholder and always returns an empty list.
 
 ---
 
@@ -647,17 +559,13 @@ This endpoint is not implemented in the current codebase. Storekeeper can list a
 ```
 PLACED (Order received)
   ↓
-(Storekeeper decides)
-  ├→ ACCEPTED (Accept order)
-  │    ↓
-  │  READY (Prepare order)
-  │    ↓
-  │  [Assign Delivery Boy]
-  │    ↓
-  │  DELIVERED (Order delivered)
-  │
-  └→ REJECTED (Reject order)
-     (Order cancelled by store)
+READY (Storekeeper marks as ready)
+  ↓
+ACCEPTED (Delivery partner accepts)
+  ↓
+PICKED_UP (Delivery partner picks up)
+  ↓
+DELIVERED (Delivered)  OR  FAILED (Delivery failed)
 ```
 
 ---
@@ -697,16 +605,13 @@ GET /storekeeper/orders?status=PLACED
 # 5️⃣ View order details
 GET /storekeeper/orders/{orderId}
 
-# 6️⃣ Accept order
-POST /storekeeper/orders/{orderId}/accept
-
-# 7️⃣ Mark as ready
+# 6️⃣ Mark as ready
 POST /storekeeper/orders/{orderId}/ready
 
-# 8️⃣ Get available delivery boys
+# 7️⃣ Get available delivery boys
 GET /storekeeper/orders/{orderId}/available-delivery
 
-# 9️⃣ Assign delivery boy
+# 8️⃣ Assign delivery boy
 POST /storekeeper/orders/{orderId}/assign-delivery
 { "deliveryBoyId": "delivery_id_123" }
 ```
@@ -729,9 +634,8 @@ POST /storekeeper/orders/{orderId}/assign-delivery
 ## 💡 Best Practices
 
 1. **Monitor PLACED orders** - Check regularly for new orders
-2. **Accept/Reject quickly** - Customers expect fast responses
-3. **Update stock after accepting** - Ensure you have inventory
-4. **Mark READY promptly** - Once order is packaged
-5. **Assign delivery ASAP** - Get order to customer faster
-6. **Track order status** - Keep customers informed
-7. **Use status filters** - GET /storekeeper/orders?status=PLACED to see new orders only
+2. **Mark READY promptly** - Once order is packaged
+3. **Keep stock updated** - Avoid overselling
+4. **Assign delivery ASAP** - Once assignment is implemented
+5. **Track order status** - Keep customers informed
+6. **Use status filters** - `GET /storekeeper/orders?status=PLACED` to see new orders only

@@ -67,6 +67,8 @@ Authorization: Bearer <token>
 - `status=READY`: Lists all unassigned orders ready for pickup
 - `mine=true`: Returns orders assigned to the authenticated delivery partner (same as `GET /delivery/orders/me`)
 
+**Note:** If you call `GET /delivery/orders` without `status=READY` or `mine=true`, the API currently returns an empty array.
+
 **Examples:**
 ```
 GET /delivery/orders?status=READY
@@ -183,11 +185,9 @@ GET /delivery/orders?mine=true
 ## Order Status Flow
 
 ```
-PLACED → ACCEPTED (Storekeeper) → READY → 
-  ↓ (Delivery accepts)
-ACCEPTED → PICKED_UP → 
-  ↓                      ↓
-DELIVERED            FAILED
+PLACED → READY (Storekeeper) → ACCEPTED (Delivery) → PICKED_UP →
+  ↓                                             ↓
+DELIVERED                                  FAILED
 ```
 
 ---
@@ -209,3 +209,4 @@ DELIVERED            FAILED
   "message": "Order not found or not assigned to you",
   "error": "Not Found"
 }
+```

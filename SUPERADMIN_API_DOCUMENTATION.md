@@ -21,8 +21,6 @@
      - `PATCH /super-admin/auth/storekeepers/:storeId/products/:id/stock`
      - `GET /super-admin/auth/storekeepers/:storeId/orders?status=...`
      - `GET /super-admin/auth/storekeepers/:storeId/orders/:id`
-     - `POST /super-admin/auth/storekeepers/:storeId/orders/:id/accept`
-     - `POST /super-admin/auth/storekeepers/:storeId/orders/:id/reject`
      - `POST /super-admin/auth/storekeepers/:storeId/orders/:id/ready`
      - `GET /super-admin/auth/storekeepers/:storeId/orders/:id/available-delivery`
    - Delivery management:
@@ -47,9 +45,9 @@ GET /super-admin/auth/storekeepers/:storeId/products
 ```
 PATCH /super-admin/auth/storekeepers/:storeId/products/:id/stock { "quantity": 10 }
 ```
-- Accept order:
+- Mark order as ready:
 ```
-POST /super-admin/auth/storekeepers/:storeId/orders/:id/accept
+POST /super-admin/auth/storekeepers/:storeId/orders/:id/ready
 ```
 
 Detailed endpoints
@@ -168,7 +166,7 @@ Detailed endpoints
 - Success response: `200 OK` — Updated product.
 - Errors: `404 Not Found` — `Product not found`
 
-#### GET /super-admin/auth/storekeepers/:storeId/orders?status=PLACED|ACCEPTED|READY|... 
+#### GET /super-admin/auth/storekeepers/:storeId/orders?status=PLACED|READY|ACCEPTED|PICKED_UP|DELIVERED|FAILED|CANCELLED
 - Purpose: List orders for the storekeeper by optional status.
 - Auth: required
 - Success response: `200 OK`
@@ -195,18 +193,6 @@ Detailed endpoints
 - Auth: required
 - Success response: `200 OK` — Populated order (items.productId, userId fields).
 - Errors: `404 Not Found` — `Order not found`
-
-#### POST /super-admin/auth/storekeepers/:storeId/orders/:id/accept
-- Purpose: Mark an order as `ACCEPTED`.
-- Auth: required
-- Success response: `200 OK` — Updated order `{ status: "ACCEPTED" }`
-- Errors: `404 Not Found` — order not found or cannot be accepted
-
-#### POST /super-admin/auth/storekeepers/:storeId/orders/:id/reject
-- Purpose: Mark an order as `REJECTED`.
-- Auth: required
-- Success response: `200 OK` — Updated order `{ status: "REJECTED" }`
-- Errors: `404 Not Found` — order not found or cannot be rejected
 
 #### POST /super-admin/auth/storekeepers/:storeId/orders/:id/ready
 - Purpose: Mark an order as `READY`.
@@ -348,8 +334,7 @@ Success response: `201 Created`
   "id": "<superAdminId>",
   "email": "admin@example.com",
   "role": "SUPER_ADMIN",
-  "location": "City, State",
-  "message": "Super Admin registered successfully"
+  "message": "Registered successfully"
 }
 ```
 Errors:
@@ -375,7 +360,6 @@ Success response: `200 OK`
   "id": "<superAdminId>",
   "email": "admin@example.com",
   "role": "SUPER_ADMIN",
-  "location": "City, State",
   "token": "<JWT_TOKEN>",
   "message": "Login successful"
 }

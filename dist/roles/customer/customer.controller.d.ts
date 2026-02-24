@@ -128,7 +128,11 @@ export declare class CustomerController {
         totalAmount: number;
         orders: import("../../orders/order.schema").OrderDocument[];
     }>;
-    placeSingleProductOrder(req: any, dto: PlaceSingleOrderDto): Promise<{
+    placeSingleProductOrder(req: Request & {
+        user: {
+            userId: string;
+        };
+    }, dto: PlaceSingleOrderDto): Promise<{
         message: string;
         order: import("mongoose").Document<unknown, {}, import("../../orders/order.schema").OrderDocument, {}, import("mongoose").DefaultSchemaOptions> & import("../../orders/order.schema").Order & import("mongoose").Document<import("mongoose").Types.ObjectId, any, any, Record<string, any>, {}> & Required<{
             _id: import("mongoose").Types.ObjectId;

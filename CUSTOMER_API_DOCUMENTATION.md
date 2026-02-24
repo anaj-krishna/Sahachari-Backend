@@ -226,7 +226,45 @@ Authorization: Bearer YOUR_JWT_TOKEN
 
 ---
 
-### 4. Get Products by Store
+### 4. Get Stores by Category (Serviceable Area)
+**Endpoint:** `GET /customer/category/:category/stores`
+
+**Headers:**
+```
+Authorization: Bearer YOUR_JWT_TOKEN
+```
+
+**URL Parameters:**
+- `category`: Category name
+
+**Example:**
+```
+GET /customer/category/Fruits/stores
+```
+
+**Response:** `200 OK`
+```json
+[
+  {
+    "category": "Fruits",
+    "stores": [
+      {
+        "_id": "store_id_1",
+        "name": "Storekeeper One",
+        "role": "ADMIN",
+        "serviceablePincodes": ["560001", "560002"]
+      }
+    ]
+  }
+]
+```
+
+**Notes:**
+- Stores are filtered to those whose `serviceablePincodes` intersect with the logged-in user's `serviceablePincodes`.
+
+---
+
+### 5. Get Products by Store
 **Endpoint:** `GET /customer/stores/:id/products`
 
 **Headers:**
@@ -394,6 +432,32 @@ DELETE /customer/cart/item_1
   "message": "Cart not found"
 }
 ```
+
+---
+
+### 4. Update Cart Item Quantity
+**Endpoint:** `PATCH /customer/cart/:itemId`
+
+**Headers:**
+```
+Authorization: Bearer YOUR_JWT_TOKEN
+Content-Type: application/json
+```
+
+**URL Parameters:**
+- `itemId`: The subdocument ID of the cart item
+
+**Body:**
+```json
+{
+  "quantity": 3
+}
+```
+
+**Response:** `200 OK` (updated cart)
+
+**Validation:**
+- `quantity`: Required, number, minimum 1
 
 ---
 
@@ -711,21 +775,21 @@ POST /customer/orders/65f4a3c9d1e2f3g4h5i6j7k8/cancel
 ```
 
 **Restrictions:**
-- ❌ Cannot cancel if status is `DELIVERED`
-- ✅ Can cancel if order is not `DELIVERED`
+- ✅ Can cancel only while status is `PLACED`, `READY`, or `ACCEPTED`
+- ❌ Cannot cancel once status is `PICKED_UP`, `DELIVERED`, or `FAILED`
 
 **Error Responses:**
 ```json
 {
   "statusCode": 404,
-  "message": "Order not found or cannot be cancelled"
+  "message": "Order not found"
 }
 ```
 
 ```json
 {
   "statusCode": 400,
-  "message": "Cannot cancel delivered order"
+  "message": "Cannot cancel order with status PICKED_UP"
 }
 ```
 

@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable prettier/prettier */
 import {
   Controller,
   Get,
@@ -120,7 +118,10 @@ export class CustomerController {
   }
 
   @Post('single-order')
-  placeSingleProductOrder(@Req() req, @Body() dto: PlaceSingleOrderDto) {
+  placeSingleProductOrder(
+    @Req() req: Request & { user: { userId: string } },
+    @Body() dto: PlaceSingleOrderDto,
+  ) {
     return this.ordersService.placeSingleOrder(req.user.userId, dto);
   }
 
