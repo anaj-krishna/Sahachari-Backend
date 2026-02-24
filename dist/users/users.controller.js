@@ -28,6 +28,9 @@ let UsersController = class UsersController {
     async updateMe(req, updateData) {
         return await this.usersService.updateProfile(req.user.userId, updateData);
     }
+    async deleteMe(req) {
+        return this.usersService.deleteAccount(req.user.userId);
+    }
 };
 exports.UsersController = UsersController;
 __decorate([
@@ -47,6 +50,15 @@ __decorate([
     __metadata("design:paramtypes", [Object, Object]),
     __metadata("design:returntype", Promise)
 ], UsersController.prototype, "updateMe", null);
+__decorate([
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.Delete)('delete-me'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    __param(0, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], UsersController.prototype, "deleteMe", null);
 exports.UsersController = UsersController = __decorate([
     (0, common_1.Controller)('users'),
     __metadata("design:paramtypes", [users_service_1.UsersService])
