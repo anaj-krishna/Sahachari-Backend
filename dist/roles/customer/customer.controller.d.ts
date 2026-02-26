@@ -55,6 +55,7 @@ export declare class CustomerController {
     }>;
     getStores(): Promise<import("mongoose").Types.ObjectId[]>;
     getStoreProducts(storeId: string): Promise<{
+        finalPrice: number;
         _id: import("mongoose").Types.ObjectId;
         storeId: import("mongoose").Types.ObjectId;
         name: string;

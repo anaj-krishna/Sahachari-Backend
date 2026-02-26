@@ -9,17 +9,6 @@ type LeanOffer = {
     startDate?: Date;
     endDate?: Date;
 };
-type LeanProduct = {
-    _id: Types.ObjectId;
-    storeId: Types.ObjectId;
-    name: string;
-    description?: string;
-    images?: string[];
-    quantity: number;
-    price: string;
-    category?: string;
-    offers: LeanOffer[];
-};
 export declare class ProductsService {
     private readonly productModel;
     constructor(productModel: Model<ProductDocument>);
@@ -30,12 +19,18 @@ export declare class ProductsService {
     } & {
         id: string;
     }>;
-    getStoreProductById(storeId: string, productId: string): Promise<import("mongoose").Document<unknown, {}, ProductDocument, {}, import("mongoose").DefaultSchemaOptions> & Product & import("mongoose").Document<Types.ObjectId, any, any, Record<string, any>, {}> & Required<{
+    private findProductByQuery;
+    getStoreProductById(storeId: string, productId: string): Promise<{
+        finalPrice: number;
         _id: Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
+        storeId: Types.ObjectId;
+        name: string;
+        description?: string;
+        images?: string[];
+        quantity: number;
+        price: string;
+        category?: string;
+        offers: LeanOffer[];
     }>;
     updateProduct(storeId: string, productId: string, dto: any): Promise<import("mongoose").Document<unknown, {}, ProductDocument, {}, import("mongoose").DefaultSchemaOptions> & Product & import("mongoose").Document<Types.ObjectId, any, any, Record<string, any>, {}> & Required<{
         _id: Types.ObjectId;
@@ -89,7 +84,18 @@ export declare class ProductsService {
         offers: LeanOffer[];
     }[]>;
     getStores(): Promise<Types.ObjectId[]>;
-    getProductsByStore(storeId: string): Promise<LeanProduct[]>;
+    getProductsByStore(storeId: string): Promise<{
+        finalPrice: number;
+        _id: Types.ObjectId;
+        storeId: Types.ObjectId;
+        name: string;
+        description?: string;
+        images?: string[];
+        quantity: number;
+        price: string;
+        category?: string;
+        offers: LeanOffer[];
+    }[]>;
     private toNumberPrice;
     private calculateFinalPrice;
     removeSingleOffer(productId: string): Promise<import("mongoose").Document<unknown, {}, ProductDocument, {}, import("mongoose").DefaultSchemaOptions> & Product & import("mongoose").Document<Types.ObjectId, any, any, Record<string, any>, {}> & Required<{

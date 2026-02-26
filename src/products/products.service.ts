@@ -44,13 +44,21 @@ export class ProductsService {
     });
   }
 
-  async getStoreProductById(storeId: string, productId: string) {
-    const product = await this.productModel.findOne({
-      _id: productId,
-      storeId: new Types.ObjectId(storeId),
-    });
+  private async findProductByQuery(query: Record<string, unknown>): Promise<LeanProduct> {
+    const product = await this.productModel.findOne(query).lean<LeanProduct>();
     if (!product) throw new NotFoundException('Product not found');
     return product;
+  }
+
+  async getStoreProductById(storeId: string, productId: string) {
+    const product = await this.findProductByQuery({
+      _id: new Types.ObjectId(productId),
+      storeId: new Types.ObjectId(storeId),
+    });
+    return {
+      ...product,
+      finalPrice: this.calculateFinalPrice(product),
+    };
   }
 
   async updateProduct(storeId: string, productId: string, dto: any) {
@@ -104,8 +112,9 @@ export class ProductsService {
 
   /* ================= CUSTOMER ================= */
   async findById(id: string) {
-    const product = await this.productModel.findById(id).lean<LeanProduct>();
-    if (!product) throw new NotFoundException('Product not found');
+    const product = await this.findProductByQuery({
+      _id: new Types.ObjectId(id),
+    });
     return {
       ...product,
       finalPrice: this.calculateFinalPrice(product),
@@ -136,9 +145,14 @@ export class ProductsService {
    * Used by BOTH customer & store/admin
    */
   async getProductsByStore(storeId: string) {
-    return this.productModel
+    const products = await this.productModel
       .find({ storeId: new Types.ObjectId(storeId) })
       .lean<LeanProduct[]>();
+
+    return products.map((product) => ({
+      ...product,
+      finalPrice: this.calculateFinalPrice(product),
+    }));
   }
 
   /* ================= HELPERS ================= */

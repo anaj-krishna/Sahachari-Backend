@@ -40,6 +40,7 @@ export declare class SuperAdminController {
     getDeliveryBoys(req: any): Promise<Types.ObjectId[]>;
     getDeliveryBoyDetail(req: any, userId: string): Promise<any>;
     saGetStoreProducts(req: any, storeId: string): Promise<{
+        finalPrice: number;
         _id: Types.ObjectId;
         storeId: Types.ObjectId;
         name: string;
@@ -63,12 +64,23 @@ export declare class SuperAdminController {
     } & {
         id: string;
     }>;
-    saGetStoreProduct(req: any, storeId: string, productId: string): Promise<import("mongoose").Document<unknown, {}, import("../../products/product.schema").ProductDocument, {}, import("mongoose").DefaultSchemaOptions> & import("../../products/product.schema").Product & import("mongoose").Document<Types.ObjectId, any, any, Record<string, any>, {}> & Required<{
+    saGetStoreProduct(req: any, storeId: string, productId: string): Promise<{
+        finalPrice: number;
         _id: Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
+        storeId: Types.ObjectId;
+        name: string;
+        description?: string;
+        images?: string[];
+        quantity: number;
+        price: string;
+        category?: string;
+        offers: {
+            type: import("../../products/product.schema").DiscountType;
+            value: number;
+            isActive: boolean;
+            startDate?: Date;
+            endDate?: Date;
+        }[];
     }>;
     saUpdateProduct(req: any, storeId: string, productId: string, dto: any): Promise<import("mongoose").Document<unknown, {}, import("../../products/product.schema").ProductDocument, {}, import("mongoose").DefaultSchemaOptions> & import("../../products/product.schema").Product & import("mongoose").Document<Types.ObjectId, any, any, Record<string, any>, {}> & Required<{
         _id: Types.ObjectId;
