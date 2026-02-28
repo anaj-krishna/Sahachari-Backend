@@ -46,4 +46,7 @@ export declare class UsersService {
     } & Required<{
         _id: import("mongoose").Types.ObjectId;
     }>) | null>;
+    deleteAccount(userId: string): Promise<{
+        message: string;
+    }>;
 }

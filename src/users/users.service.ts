@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User, UserDocument } from './user.schema';
@@ -50,4 +50,15 @@ export class UsersService {
       .select('-password')
       .exec();
   }
+
+  //DELETE ACCOUNT
+  async deleteAccount(userId: string): Promise<{ message: string }> {
+      const user = await this.userModel.findByIdAndDelete(userId).exec();
+
+      if (!user) {
+        throw new NotFoundException(`User with ID ${userId} not found`);
+      }
+
+      return { message: 'Account deleted successfully' };
+  } 
 }

@@ -78,6 +78,13 @@ let UsersService = class UsersService {
             .select('-password')
             .exec();
     }
+    async deleteAccount(userId) {
+        const user = await this.userModel.findByIdAndDelete(userId).exec();
+        if (!user) {
+            throw new common_1.NotFoundException(`User with ID ${userId} not found`);
+        }
+        return { message: 'Account deleted successfully' };
+    }
 };
 exports.UsersService = UsersService;
 exports.UsersService = UsersService = __decorate([
