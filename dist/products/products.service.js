@@ -28,14 +28,21 @@ let ProductsService = class ProductsService {
             storeId: new mongoose_2.Types.ObjectId(storeId),
         });
     }
-    async getStoreProductById(storeId, productId) {
-        const product = await this.productModel.findOne({
-            _id: productId,
-            storeId: new mongoose_2.Types.ObjectId(storeId),
-        });
+    async findProductByQuery(query) {
+        const product = await this.productModel.findOne(query).lean();
         if (!product)
             throw new common_1.NotFoundException('Product not found');
         return product;
+    }
+    async getStoreProductById(storeId, productId) {
+        const product = await this.findProductByQuery({
+            _id: new mongoose_2.Types.ObjectId(productId),
+            storeId: new mongoose_2.Types.ObjectId(storeId),
+        });
+        return {
+            ...product,
+            finalPrice: this.calculateFinalPrice(product),
+        };
     }
     async updateProduct(storeId, productId, dto) {
         const updatedProduct = await this.productModel.findOneAndUpdate({
@@ -75,9 +82,9 @@ let ProductsService = class ProductsService {
         return product;
     }
     async findById(id) {
-        const product = await this.productModel.findById(id).lean();
-        if (!product)
-            throw new common_1.NotFoundException('Product not found');
+        const product = await this.findProductByQuery({
+            _id: new mongoose_2.Types.ObjectId(id),
+        });
         return {
             ...product,
             finalPrice: this.calculateFinalPrice(product),
@@ -101,9 +108,13 @@ let ProductsService = class ProductsService {
         return this.productModel.distinct('storeId');
     }
     async getProductsByStore(storeId) {
-        return this.productModel
+        const products = await this.productModel
             .find({ storeId: new mongoose_2.Types.ObjectId(storeId) })
             .lean();
+        return products.map((product) => ({
+            ...product,
+            finalPrice: this.calculateFinalPrice(product),
+        }));
     }
     toNumberPrice(price) {
         return Number(String(price || '').replace(/[^0-9.]/g, '')) || 0;
