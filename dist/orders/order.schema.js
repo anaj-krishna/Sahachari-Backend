@@ -72,6 +72,8 @@ let Order = class Order {
     checkoutId;
     deliveryBoyId;
     items;
+    itemsSubtotal;
+    deliveryCharge;
     totalAmount;
     deliveryAddress;
     pickupAddress;
@@ -98,6 +100,14 @@ __decorate([
     (0, mongoose_1.Prop)({ type: [exports.OrderItemSchema], required: true }),
     __metadata("design:type", Array)
 ], Order.prototype, "items", void 0);
+__decorate([
+    (0, mongoose_1.Prop)({ required: true, default: 0 }),
+    __metadata("design:type", Number)
+], Order.prototype, "itemsSubtotal", void 0);
+__decorate([
+    (0, mongoose_1.Prop)({ required: true, min: 0, default: 0 }),
+    __metadata("design:type", Number)
+], Order.prototype, "deliveryCharge", void 0);
 __decorate([
     (0, mongoose_1.Prop)({ required: true }),
     __metadata("design:type", Number)

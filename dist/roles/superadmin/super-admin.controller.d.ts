@@ -8,13 +8,16 @@ import { Model, Types } from 'mongoose';
 import { SuperAdmin } from './super-admin.schema';
 import { OrdersService } from '../../orders/orders.service';
 import { ProductsService } from '../../products/products.service';
+import { DeliveryChargesService } from '../../delivery-charges/delivery-charges.service';
+import { UpsertDeliveryChargeDto } from '../../delivery-charges/dto/upsert-delivery-charge.dto';
 export declare class SuperAdminController {
     private readonly superAdminService;
     private readonly authService;
     private readonly ordersService;
     private readonly productsService;
+    private readonly deliveryChargesService;
     private readonly superAdminModel;
-    constructor(superAdminService: SuperAdminService, authService: AuthService, ordersService: OrdersService, productsService: ProductsService, superAdminModel: Model<SuperAdmin>);
+    constructor(superAdminService: SuperAdminService, authService: AuthService, ordersService: OrdersService, productsService: ProductsService, deliveryChargesService: DeliveryChargesService, superAdminModel: Model<SuperAdmin>);
     private ensureValidObjectId;
     private ensureMember;
     signup(dto: SuperAdminSignupDto): Promise<{
@@ -34,6 +37,19 @@ export declare class SuperAdminController {
         _id: Types.ObjectId;
     }> & {
         __v: number;
+    }>;
+    listDeliveryCharges(): Promise<(import("../../delivery-charges/delivery-charge.schema").DeliveryCharge & import("mongoose").Document<Types.ObjectId, any, any, Record<string, any>, {}> & Required<{
+        _id: Types.ObjectId;
+    }> & {
+        __v: number;
+    })[]>;
+    upsertDeliveryCharge(pincode: string, dto: UpsertDeliveryChargeDto): Promise<import("../../delivery-charges/delivery-charge.schema").DeliveryCharge & import("mongoose").Document<Types.ObjectId, any, any, Record<string, any>, {}> & Required<{
+        _id: Types.ObjectId;
+    }> & {
+        __v: number;
+    }>;
+    deleteDeliveryCharge(pincode: string): Promise<{
+        deletedCount: number;
     }>;
     getStorekeepers(req: any): Promise<Types.ObjectId[]>;
     getStorekeeperDetail(req: any, userId: string): Promise<any>;

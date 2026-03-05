@@ -8,6 +8,7 @@ import { AuthModule } from '../../auth/auth.module';
 import { JwtModule } from '@nestjs/jwt';
 import { OrdersModule } from '../../orders/orders.module';
 import { ProductsModule } from '../../products/products.module';
+import { DeliveryChargesModule } from '../../delivery-charges/delivery-charges.module';
 @Module({
   imports: [
     MongooseModule.forFeature([
@@ -17,6 +18,7 @@ import { ProductsModule } from '../../products/products.module';
     AuthModule,
     OrdersModule,
     ProductsModule,
+    DeliveryChargesModule,
     JwtModule.register({
       secret: process.env.JWT_SECRET || 'superadmin_secret',
       signOptions: { expiresIn: '7d' },

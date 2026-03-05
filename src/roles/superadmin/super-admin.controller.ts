@@ -28,6 +28,8 @@ import { SuperAdmin } from './super-admin.schema';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { OrdersService } from '../../orders/orders.service';
 import { ProductsService } from '../../products/products.service';
+import { DeliveryChargesService } from '../../delivery-charges/delivery-charges.service';
+import { UpsertDeliveryChargeDto } from '../../delivery-charges/dto/upsert-delivery-charge.dto';
 
 @Controller('super-admin/auth')
 export class SuperAdminController {
@@ -36,6 +38,7 @@ export class SuperAdminController {
     private readonly authService: AuthService,
     private readonly ordersService: OrdersService,
     private readonly productsService: ProductsService,
+    private readonly deliveryChargesService: DeliveryChargesService,
     @InjectModel(SuperAdmin.name)
     private readonly superAdminModel: Model<SuperAdmin>,
   ) {}
@@ -83,6 +86,28 @@ export class SuperAdminController {
   async getProfile(@Req() req) {
     const superAdminId = req.user?.userId ?? req.user;
     return this.superAdminService.getProfile(superAdminId);
+  }
+
+  // 🚚 Delivery charges management (SUPER ADMIN)
+  @UseGuards(JwtAuthGuard)
+  @Get('delivery-charges')
+  listDeliveryCharges() {
+    return this.deliveryChargesService.listAll();
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Put('delivery-charges/:pincode')
+  upsertDeliveryCharge(
+    @Param('pincode') pincode: string,
+    @Body() dto: UpsertDeliveryChargeDto,
+  ) {
+    return this.deliveryChargesService.upsert(pincode, dto.charge);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete('delivery-charges/:pincode')
+  deleteDeliveryCharge(@Param('pincode') pincode: string) {
+    return this.deliveryChargesService.remove(pincode);
   }
 
   // 🧾 Get Storekeepers created by this SuperAdmin

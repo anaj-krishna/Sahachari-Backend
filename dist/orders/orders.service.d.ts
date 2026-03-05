@@ -5,12 +5,14 @@ import { ProductDocument } from '../products/product.schema';
 import { PlaceOrderDto } from './dto/place-order.dto';
 import { UsersService } from '../users/users.service';
 import { PlaceSingleOrderDto } from './dto/place-single-order.dto';
+import { DeliveryChargesService } from '../delivery-charges/delivery-charges.service';
 export declare class OrdersService {
     private readonly orderModel;
     private readonly cartService;
     private readonly usersService;
+    private readonly deliveryChargesService;
     private readonly productModel;
-    constructor(orderModel: Model<OrderDocument>, cartService: CartService, usersService: UsersService, productModel: Model<ProductDocument>);
+    constructor(orderModel: Model<OrderDocument>, cartService: CartService, usersService: UsersService, deliveryChargesService: DeliveryChargesService, productModel: Model<ProductDocument>);
     placeOrder(userId: string, dto: PlaceOrderDto): Promise<{
         checkoutId: string;
         ordersCount: number;

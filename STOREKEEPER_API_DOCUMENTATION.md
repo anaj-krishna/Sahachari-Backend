@@ -37,7 +37,7 @@ Content-Type: application/json
   "id": "696dc7c4d941d2c9a8f56e4d",
   "email": "abc@store.com",
   "role": "ADMIN",
-  "status": "PENDING",
+  "status": "ACTIVE",
   "message": "Registration successful. Awaiting admin approval."
 }
 ```
@@ -50,8 +50,7 @@ Content-Type: application/json
  - `address`: Required, string
  - `serviceablePincodes`: Required, non-empty array of strings
 
-**Status Description:**
-- `PENDING`: Account created but awaiting superadmin approval
+**Note:** Protected endpoints require `status=ACTIVE` (enforced by role guard).
 
 ### Login
 **Endpoint:** `POST /auth/login`
@@ -108,7 +107,7 @@ Content-Type: application/json
   "storeId": "store_id_123",
   "name": "Laptop Pro",
   "description": "High-performance laptop with 16GB RAM",
-  "price": 50000,
+  "price": "50000",
   "quantity": 10,
   "category": "Electronics",
   "images": ["img1.jpg", "img2.jpg"],
@@ -143,7 +142,8 @@ Authorization: Bearer YOUR_JWT_TOKEN
     "_id": "prod_1",
     "storeId": "store_id_123",
     "name": "Laptop Pro",
-    "price": 50000,
+    "price": "50000",
+    "finalPrice": 45000,
     "quantity": 10,
     "category": "Electronics",
     "description": "High-performance laptop",
@@ -154,7 +154,8 @@ Authorization: Bearer YOUR_JWT_TOKEN
     "_id": "prod_2",
     "storeId": "store_id_123",
     "name": "Mouse Wireless",
-    "price": 1500,
+    "price": "1500",
+    "finalPrice": 1500,
     "quantity": 50,
     "category": "Accessories"
   }
@@ -186,7 +187,8 @@ GET /storekeeper/products/65f4a3c9d1e2f3g4h5i6j7k8
   "storeId": "store_id_123",
   "name": "Laptop Pro",
   "description": "High-performance laptop",
-  "price": 50000,
+  "price": "50000",
+  "finalPrice": 45000,
   "quantity": 10,
   "category": "Electronics",
   "images": ["img1.jpg"],
@@ -213,7 +215,7 @@ Content-Type: application/json
 {
   "name": "Laptop Pro Max",
   "description": "Updated description",
-  "price": 55000,
+  "price": "55000",
   "quantity": 15,
   "category": "Electronics",
   "images": ["new_img1.jpg", "new_img2.jpg"]
@@ -227,7 +229,7 @@ Content-Type: application/json
   "storeId": "store_id_123",
   "name": "Laptop Pro Max",
   "description": "Updated description",
-  "price": 55000,
+  "price": "55000",
   "quantity": 15,
   "category": "Electronics",
   "images": ["new_img1.jpg", "new_img2.jpg"],
@@ -292,7 +294,7 @@ Content-Type: application/json
   "_id": "prod_1",
   "storeId": "store_id_123",
   "name": "Laptop Pro",
-  "price": 50000,
+  "price": "50000",
   "quantity": 10,
   "offers": [
     {
@@ -366,7 +368,7 @@ Content-Type: application/json
   "storeId": "store_id_123",
   "name": "Laptop Pro",
   "quantity": 25,
-  "price": 50000
+  "price": "50000"
 }
 ```
 
@@ -401,7 +403,11 @@ GET /storekeeper/orders?status=READY
 [
   {
     "_id": "order_1",
-    "userId": "customer_123",
+    "userId": {
+      "_id": "customer_123",
+      "name": "John Doe",
+      "email": "john@example.com"
+    },
     "storeId": "store_id_123",
     "checkoutId": "CHECKOUT-1705684920123-abc9d3f",
     "items": [
@@ -410,13 +416,14 @@ GET /storekeeper/orders?status=READY
         "productId": {
           "_id": "prod_1",
           "name": "Laptop Pro",
-          "price": 50000
+          "price": "50000"
         },
         "quantity": 1,
         "price": 50000
       }
     ],
     "totalAmount": 50000,
+    "pickupAddress": "Store Address, City",
     "deliveryAddress": {
       "street": "123 Main Street",
       "city": "New York",
@@ -452,18 +459,27 @@ GET /storekeeper/orders/65f4a3c9d1e2f3g4h5i6j7k8
 ```json
 {
   "_id": "65f4a3c9d1e2f3g4h5i6j7k8",
-  "userId": "customer_123",
+  "userId": {
+    "_id": "customer_123",
+    "name": "John Doe",
+    "email": "john@example.com"
+  },
   "storeId": "store_id_123",
   "checkoutId": "CHECKOUT-1705684920123-abc9d3f",
   "items": [
     {
       "_id": "order_item_1",
-      "productId": "prod_1",
+      "productId": {
+        "_id": "prod_1",
+        "name": "Laptop Pro",
+        "price": "50000"
+      },
       "quantity": 1,
       "price": 50000
     }
   ],
   "totalAmount": 50000,
+  "pickupAddress": "Store Address, City",
   "deliveryAddress": {
     "street": "123 Main Street",
     "city": "New York",
@@ -512,7 +528,16 @@ POST /storekeeper/orders/65f4a3c9d1e2f3g4h5i6j7k8/ready
 ```json
 {
   "statusCode": 404,
-  "message": "Order not found or not in PLACED status"
+  "message": "Order not found or cannot transition to READY"
+}
+```
+
+**Error Response (wrong status):**
+```json
+{
+  "statusCode": 400,
+  "message": "Cannot transition from ACCEPTED to READY",
+  "error": "Bad Request"
 }
 ```
 
@@ -588,7 +613,7 @@ Authorization: Bearer <jwt_token>
 POST /storekeeper/products
 {
   "name": "Laptop",
-  "price": 50000,
+  "price": "50000",
   "quantity": 10
 }
 
@@ -622,11 +647,10 @@ POST /storekeeper/orders/{orderId}/assign-delivery
 
 | Code | Message | Cause |
 |------|---------|-------|
-| 400 | Bad Request | Invalid input data |
+| 400 | Bad Request | Validation errors or business rule errors |
 | 401 | Unauthorized | Missing or invalid JWT token |
 | 403 | Forbidden | Not a STOREKEEPER role |
 | 404 | Not Found | Resource doesn't exist or wrong status |
-| 422 | Validation Failed | Invalid input validation |
 | 500 | Internal Server Error | Server-side error |
 
 ---

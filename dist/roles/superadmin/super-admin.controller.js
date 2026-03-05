@@ -26,17 +26,21 @@ const super_admin_schema_1 = require("./super-admin.schema");
 const jwt_auth_guard_1 = require("../../common/guards/jwt-auth.guard");
 const orders_service_1 = require("../../orders/orders.service");
 const products_service_1 = require("../../products/products.service");
+const delivery_charges_service_1 = require("../../delivery-charges/delivery-charges.service");
+const upsert_delivery_charge_dto_1 = require("../../delivery-charges/dto/upsert-delivery-charge.dto");
 let SuperAdminController = class SuperAdminController {
     superAdminService;
     authService;
     ordersService;
     productsService;
+    deliveryChargesService;
     superAdminModel;
-    constructor(superAdminService, authService, ordersService, productsService, superAdminModel) {
+    constructor(superAdminService, authService, ordersService, productsService, deliveryChargesService, superAdminModel) {
         this.superAdminService = superAdminService;
         this.authService = authService;
         this.ordersService = ordersService;
         this.productsService = productsService;
+        this.deliveryChargesService = deliveryChargesService;
         this.superAdminModel = superAdminModel;
     }
     ensureValidObjectId(id, label) {
@@ -64,6 +68,15 @@ let SuperAdminController = class SuperAdminController {
     async getProfile(req) {
         const superAdminId = req.user?.userId ?? req.user;
         return this.superAdminService.getProfile(superAdminId);
+    }
+    listDeliveryCharges() {
+        return this.deliveryChargesService.listAll();
+    }
+    upsertDeliveryCharge(pincode, dto) {
+        return this.deliveryChargesService.upsert(pincode, dto.charge);
+    }
+    deleteDeliveryCharge(pincode) {
+        return this.deliveryChargesService.remove(pincode);
     }
     async getStorekeepers(req) {
         const superAdminId = req.user?.userId ?? req.user;
@@ -224,6 +237,30 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], SuperAdminController.prototype, "getProfile", null);
+__decorate([
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.Get)('delivery-charges'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", void 0)
+], SuperAdminController.prototype, "listDeliveryCharges", null);
+__decorate([
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.Put)('delivery-charges/:pincode'),
+    __param(0, (0, common_1.Param)('pincode')),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, upsert_delivery_charge_dto_1.UpsertDeliveryChargeDto]),
+    __metadata("design:returntype", void 0)
+], SuperAdminController.prototype, "upsertDeliveryCharge", null);
+__decorate([
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.Delete)('delivery-charges/:pincode'),
+    __param(0, (0, common_1.Param)('pincode')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], SuperAdminController.prototype, "deleteDeliveryCharge", null);
 __decorate([
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     (0, common_1.Get)('storekeepers'),
@@ -470,11 +507,12 @@ __decorate([
 ], SuperAdminController.prototype, "createDeliveryBoy", null);
 exports.SuperAdminController = SuperAdminController = __decorate([
     (0, common_1.Controller)('super-admin/auth'),
-    __param(4, (0, mongoose_1.InjectModel)(super_admin_schema_1.SuperAdmin.name)),
+    __param(5, (0, mongoose_1.InjectModel)(super_admin_schema_1.SuperAdmin.name)),
     __metadata("design:paramtypes", [super_admin_service_1.SuperAdminService,
         auth_service_1.AuthService,
         orders_service_1.OrdersService,
         products_service_1.ProductsService,
+        delivery_charges_service_1.DeliveryChargesService,
         mongoose_2.Model])
 ], SuperAdminController);
 //# sourceMappingURL=super-admin.controller.js.map

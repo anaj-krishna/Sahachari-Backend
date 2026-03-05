@@ -54,6 +54,12 @@ export class Order {
   @Prop({ type: [OrderItemSchema], required: true })
   items: OrderItem[];
 
+  @Prop({ required: true, default: 0 })
+  itemsSubtotal: number;
+
+  @Prop({ required: true, min: 0, default: 0 })
+  deliveryCharge: number;
+
   @Prop({ required: true })
   totalAmount: number;
 

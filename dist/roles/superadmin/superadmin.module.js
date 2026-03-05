@@ -17,6 +17,7 @@ const auth_module_1 = require("../../auth/auth.module");
 const jwt_1 = require("@nestjs/jwt");
 const orders_module_1 = require("../../orders/orders.module");
 const products_module_1 = require("../../products/products.module");
+const delivery_charges_module_1 = require("../../delivery-charges/delivery-charges.module");
 let SuperAdminModule = class SuperAdminModule {
 };
 exports.SuperAdminModule = SuperAdminModule;
@@ -30,6 +31,7 @@ exports.SuperAdminModule = SuperAdminModule = __decorate([
             auth_module_1.AuthModule,
             orders_module_1.OrdersModule,
             products_module_1.ProductsModule,
+            delivery_charges_module_1.DeliveryChargesModule,
             jwt_1.JwtModule.register({
                 secret: process.env.JWT_SECRET || 'superadmin_secret',
                 signOptions: { expiresIn: '7d' },

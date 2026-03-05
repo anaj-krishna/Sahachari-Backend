@@ -44,7 +44,9 @@ export class ProductsService {
     });
   }
 
-  private async findProductByQuery(query: Record<string, unknown>): Promise<LeanProduct> {
+  private async findProductByQuery(
+    query: Record<string, unknown>,
+  ): Promise<LeanProduct> {
     const product = await this.productModel.findOne(query).lean<LeanProduct>();
     if (!product) throw new NotFoundException('Product not found');
     return product;

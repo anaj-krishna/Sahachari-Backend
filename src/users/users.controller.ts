@@ -1,5 +1,15 @@
 /* eslint-disable prettier/prettier */
-import { Controller, Get, UseGuards, Req, Patch, Body, Delete, HttpCode, HttpStatus } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  UseGuards,
+  Req,
+  Patch,
+  Body,
+  Delete,
+  HttpCode,
+  HttpStatus,
+} from '@nestjs/common';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { Request } from 'express';
 import { UsersService } from './users.service'; // Added
@@ -38,5 +48,4 @@ export class UsersController {
   async deleteMe(@Req() req: Request & { user: JwtUser }) {
     return this.usersService.deleteAccount(req.user.userId);
   }
-
 }

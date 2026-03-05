@@ -28,7 +28,7 @@ API endpoints for delivery partners to manage delivery jobs. All endpoints (exce
   "id": "user_id",
   "email": "newuser123@store.com",
   "role": "DELIVERY",
-  "status": "PENDING",
+  "status": "ACTIVE",
   "message": "Registration successful. Awaiting admin approval."
 }
 ```
@@ -82,21 +82,19 @@ GET /delivery/orders?mine=true
     "_id": "order_123",
     "userId": {
       "_id": "user_456",
-      "name": "John Doe",
-      "phone": "+1234567890"
+      "name": "John Doe"
     },
     "storeId": {
       "_id": "store_789",
       "name": "Main Store",
-      "address": "123 Main St",
-      "phone": "+0987654321"
+      "address": "123 Main St"
     },
     "items": [
       {
         "productId": {
           "_id": "prod_101",
           "name": "Product Name",
-          "price": 10.99
+          "price": "10.99"
         },
         "quantity": 2,
         "price": 10.99
@@ -197,8 +195,11 @@ DELIVERED                                  FAILED
 | Status | Description |
 |--------|-------------|
 | 400 | Bad Request - Invalid input |
+| 400 | Bad Request - Action not allowed in current status (`Cannot transition from <STATUS> to <NEW_STATUS>`) |
+| 400 | Bad Request - Order not assigned to you (for pickup/deliver/fail when not assigned) |
 | 401 | Unauthorized - Missing/invalid token |
 | 403 | Forbidden - Not a delivery partner |
+| 404 | Not Found - Order doesn't exist / cannot transition (`Order not found or cannot transition to <NEW_STATUS>`) |
 | 404 | Not Found - Order doesn't exist or not assigned to you |
 | 500 | Server Error |
 
@@ -207,6 +208,24 @@ DELIVERED                                  FAILED
 {
   "statusCode": 404,
   "message": "Order not found or not assigned to you",
+  "error": "Not Found"
+}
+```
+
+**Example Transition Error (status invalid):**
+```json
+{
+  "statusCode": 400,
+  "message": "Cannot transition from PLACED to ACCEPTED",
+  "error": "Bad Request"
+}
+```
+
+**Example Transition Error (order not found / already taken):**
+```json
+{
+  "statusCode": 404,
+  "message": "Order not found or cannot transition to ACCEPTED",
   "error": "Not Found"
 }
 ```

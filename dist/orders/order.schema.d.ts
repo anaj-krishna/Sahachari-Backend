@@ -65,6 +65,8 @@ export declare class Order {
     checkoutId: string;
     deliveryBoyId?: Types.ObjectId;
     items: OrderItem[];
+    itemsSubtotal: number;
+    deliveryCharge: number;
     totalAmount: number;
     deliveryAddress: DeliveryAddress;
     pickupAddress: any;
@@ -126,6 +128,24 @@ export declare const OrderSchema: import("mongoose").Schema<Order, import("mongo
         id: string;
     }> | undefined;
     items?: import("mongoose").SchemaDefinitionProperty<OrderItem[], Order, Document<unknown, {}, Order, {
+        id: string;
+    }, import("mongoose").ResolveSchemaOptions<import("mongoose").DefaultSchemaOptions>> & Omit<Order & {
+        _id: Types.ObjectId;
+    } & {
+        __v: number;
+    }, "id"> & {
+        id: string;
+    }> | undefined;
+    itemsSubtotal?: import("mongoose").SchemaDefinitionProperty<number, Order, Document<unknown, {}, Order, {
+        id: string;
+    }, import("mongoose").ResolveSchemaOptions<import("mongoose").DefaultSchemaOptions>> & Omit<Order & {
+        _id: Types.ObjectId;
+    } & {
+        __v: number;
+    }, "id"> & {
+        id: string;
+    }> | undefined;
+    deliveryCharge?: import("mongoose").SchemaDefinitionProperty<number, Order, Document<unknown, {}, Order, {
         id: string;
     }, import("mongoose").ResolveSchemaOptions<import("mongoose").DefaultSchemaOptions>> & Omit<Order & {
         _id: Types.ObjectId;

@@ -20,15 +20,18 @@ const order_schema_1 = require("./order.schema");
 const cart_service_1 = require("../cart/cart.service");
 const product_schema_1 = require("../products/product.schema");
 const users_service_1 = require("../users/users.service");
+const delivery_charges_service_1 = require("../delivery-charges/delivery-charges.service");
 let OrdersService = class OrdersService {
     orderModel;
     cartService;
     usersService;
+    deliveryChargesService;
     productModel;
-    constructor(orderModel, cartService, usersService, productModel) {
+    constructor(orderModel, cartService, usersService, deliveryChargesService, productModel) {
         this.orderModel = orderModel;
         this.cartService = cartService;
         this.usersService = usersService;
+        this.deliveryChargesService = deliveryChargesService;
         this.productModel = productModel;
     }
     async placeOrder(userId, dto) {
@@ -39,6 +42,7 @@ let OrdersService = class OrdersService {
         const checkoutId = `CHECKOUT-${Date.now()}-${Math.random()
             .toString(36)
             .substr(2, 9)}`;
+        const deliveryCharge = await this.deliveryChargesService.getChargeForPincode(dto.zipCode);
         const itemsByStore = new Map();
         for (const item of cart.items) {
             const storeId = item.storeId.toString();
@@ -73,7 +77,9 @@ let OrdersService = class OrdersService {
                 storeId: new mongoose_2.Types.ObjectId(storeId),
                 checkoutId,
                 items: orderItems,
-                totalAmount: storeTotal,
+                itemsSubtotal: storeTotal,
+                deliveryCharge,
+                totalAmount: storeTotal + deliveryCharge,
                 deliveryAddress: dto,
                 pickupAddress: storeUser.address,
                 status: 'PLACED',
@@ -98,7 +104,9 @@ let OrdersService = class OrdersService {
             throw new common_1.NotFoundException(`Product ${productId} not found`);
         }
         const numericPrice = Number(String(product.price).replace(/[^0-9.]/g, ''));
-        const totalAmount = numericPrice * quantity;
+        const itemsSubtotal = numericPrice * quantity;
+        const deliveryCharge = await this.deliveryChargesService.getChargeForPincode(deliveryAddress.zipCode);
+        const totalAmount = itemsSubtotal + deliveryCharge;
         const storeId = product.storeId.toString();
         const storeUser = await this.usersService.getById(storeId);
         if (!storeUser) {
@@ -115,6 +123,8 @@ let OrdersService = class OrdersService {
                     price: numericPrice,
                 },
             ],
+            itemsSubtotal,
+            deliveryCharge,
             totalAmount,
             deliveryAddress,
             pickupAddress: storeUser.address,
@@ -175,7 +185,8 @@ let OrdersService = class OrdersService {
         const query = { _id: orderId };
         if (userRole === 'CUSTOMER') {
             query.userId = new mongoose_2.Types.ObjectId(userId);
-            if (newStatus === 'CANCELLED' && !transitionRules.CUSTOMER.CANCELLED.includes(order.status)) {
+            if (newStatus === 'CANCELLED' &&
+                !transitionRules.CUSTOMER.CANCELLED.includes(order.status)) {
                 throw new common_1.BadRequestException(`Cannot cancel order with status ${order.status}`);
             }
         }
@@ -187,7 +198,8 @@ let OrdersService = class OrdersService {
         }
         else if (userRole === 'DELIVERY') {
             query.deliveryBoyId = new mongoose_2.Types.ObjectId(userId);
-            if (newStatus !== 'ACCEPTED' && !order.deliveryBoyId?.equals(new mongoose_2.Types.ObjectId(userId))) {
+            if (newStatus !== 'ACCEPTED' &&
+                !order.deliveryBoyId?.equals(new mongoose_2.Types.ObjectId(userId))) {
                 throw new common_1.BadRequestException('Order not assigned to you');
             }
             if (!transitionRules.DELIVERY[newStatus]?.includes(order.status)) {
@@ -294,10 +306,11 @@ exports.OrdersService = OrdersService;
 exports.OrdersService = OrdersService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, mongoose_1.InjectModel)(order_schema_1.Order.name)),
-    __param(3, (0, mongoose_1.InjectModel)(product_schema_1.Product.name)),
+    __param(4, (0, mongoose_1.InjectModel)(product_schema_1.Product.name)),
     __metadata("design:paramtypes", [mongoose_2.Model,
         cart_service_1.CartService,
         users_service_1.UsersService,
+        delivery_charges_service_1.DeliveryChargesService,
         mongoose_2.Model])
 ], OrdersService);
 //# sourceMappingURL=orders.service.js.map

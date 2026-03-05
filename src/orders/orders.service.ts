@@ -13,6 +13,7 @@ import { Product, ProductDocument } from '../products/product.schema';
 import { PlaceOrderDto } from './dto/place-order.dto';
 import { UsersService } from '../users/users.service';
 import { PlaceSingleOrderDto } from './dto/place-single-order.dto';
+import { DeliveryChargesService } from '../delivery-charges/delivery-charges.service';
 @Injectable()
 export class OrdersService {
   constructor(
@@ -20,6 +21,7 @@ export class OrdersService {
     private readonly orderModel: Model<OrderDocument>,
     private readonly cartService: CartService,
     private readonly usersService: UsersService,
+    private readonly deliveryChargesService: DeliveryChargesService,
     @InjectModel(Product.name)
     private readonly productModel: Model<ProductDocument>,
   ) {}
@@ -36,6 +38,9 @@ export class OrdersService {
     const checkoutId = `CHECKOUT-${Date.now()}-${Math.random()
       .toString(36)
       .substr(2, 9)}`;
+
+    const deliveryCharge =
+      await this.deliveryChargesService.getChargeForPincode(dto.zipCode);
 
     // Group cart items by storeId (admin user)
     const itemsByStore = new Map<string, CartItem[]>();
@@ -87,7 +92,9 @@ export class OrdersService {
         storeId: new Types.ObjectId(storeId),
         checkoutId,
         items: orderItems,
-        totalAmount: storeTotal,
+        itemsSubtotal: storeTotal,
+        deliveryCharge,
+        totalAmount: storeTotal + deliveryCharge,
         deliveryAddress: dto, // Customer address
         pickupAddress: storeUser.address, // 🆕 Store/Admin address
         status: 'PLACED',
@@ -125,7 +132,14 @@ export class OrdersService {
 
     const numericPrice = Number(String(product.price).replace(/[^0-9.]/g, ''));
 
-    const totalAmount = numericPrice * quantity;
+    const itemsSubtotal = numericPrice * quantity;
+
+    const deliveryCharge =
+      await this.deliveryChargesService.getChargeForPincode(
+        deliveryAddress.zipCode,
+      );
+
+    const totalAmount = itemsSubtotal + deliveryCharge;
 
     // 🔹 Get store/admin user for pickup address
     const storeId = product.storeId.toString();
@@ -146,6 +160,8 @@ export class OrdersService {
           price: numericPrice,
         },
       ],
+      itemsSubtotal,
+      deliveryCharge,
       totalAmount,
       deliveryAddress, // customer
       pickupAddress: storeUser.address, // admin/store
@@ -228,7 +244,10 @@ export class OrdersService {
     if (userRole === 'CUSTOMER') {
       query.userId = new Types.ObjectId(userId);
       // Can only cancel their own orders
-      if (newStatus === 'CANCELLED' && !transitionRules.CUSTOMER.CANCELLED.includes(order.status)) {
+      if (
+        newStatus === 'CANCELLED' &&
+        !transitionRules.CUSTOMER.CANCELLED.includes(order.status)
+      ) {
         throw new BadRequestException(
           `Cannot cancel order with status ${order.status}`,
         );
@@ -244,7 +263,10 @@ export class OrdersService {
     } else if (userRole === 'DELIVERY') {
       query.deliveryBoyId = new Types.ObjectId(userId);
       // Delivery boy can only work on assigned orders (except ACCEPTED which assigns them)
-      if (newStatus !== 'ACCEPTED' && !order.deliveryBoyId?.equals(new Types.ObjectId(userId))) {
+      if (
+        newStatus !== 'ACCEPTED' &&
+        !order.deliveryBoyId?.equals(new Types.ObjectId(userId))
+      ) {
         throw new BadRequestException('Order not assigned to you');
       }
       // Validate transition
@@ -276,9 +298,13 @@ export class OrdersService {
 
     // Execute update
     // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-    const updatedOrder = await this.orderModel.findOneAndUpdate(query, updateObj, {
-      new: true,
-    });
+    const updatedOrder = await this.orderModel.findOneAndUpdate(
+      query,
+      updateObj,
+      {
+        new: true,
+      },
+    );
 
     if (!updatedOrder) {
       throw new NotFoundException(
@@ -319,8 +345,6 @@ export class OrdersService {
     if (!order) throw new NotFoundException('Order not found');
     return order;
   }
-
-
 
   // GET AVAILABLE DELIVERY BOYS (placeholder - needs user service)
   async getAvailableDeliveryBoys(storeId: string, orderId: string) {
@@ -388,5 +412,4 @@ export class OrdersService {
 
     return order;
   }
-
 }
