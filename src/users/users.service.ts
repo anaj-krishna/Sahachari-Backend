@@ -22,6 +22,10 @@ export class UsersService {
     status: AccountStatus;
     address: string;
     serviceablePincodes: string[];
+    address2?: string;
+    mobileNumber?: string;
+    image?: string;
+    storeId?: User['storeId'];
   }): Promise<UserDocument> {
     const hashed = await bcrypt.hash(data.password, 10);
 

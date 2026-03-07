@@ -13,6 +13,10 @@ export declare class UsersService {
         status: AccountStatus;
         address: string;
         serviceablePincodes: string[];
+        address2?: string;
+        mobileNumber?: string;
+        image?: string;
+        storeId?: User['storeId'];
     }): Promise<UserDocument>;
     findByEmail(email: string): Promise<UserDocument | null>;
     findWithPassword(email: string): Promise<UserDocument | null>;

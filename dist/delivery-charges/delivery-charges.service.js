@@ -33,6 +33,15 @@ let DeliveryChargesService = class DeliveryChargesService {
     async listAll() {
         return this.deliveryChargeModel.find().sort({ pincode: 1 }).lean();
     }
+    async listAllForSuperAdmin(superAdminId) {
+        if (!mongoose_2.Types.ObjectId.isValid(superAdminId)) {
+            throw new common_1.BadRequestException('SuperAdmin id is invalid');
+        }
+        return this.deliveryChargeModel
+            .find({ createdBy: new mongoose_2.Types.ObjectId(superAdminId) })
+            .sort({ pincode: 1 })
+            .lean();
+    }
     async upsert(pincode, charge) {
         this.assertValidPincode(pincode);
         const updated = await this.deliveryChargeModel
@@ -40,8 +49,49 @@ let DeliveryChargesService = class DeliveryChargesService {
             .lean();
         return updated;
     }
+    async upsertForSuperAdmin(superAdminId, pincode, charge) {
+        if (!mongoose_2.Types.ObjectId.isValid(superAdminId)) {
+            throw new common_1.BadRequestException('SuperAdmin id is invalid');
+        }
+        this.assertValidPincode(pincode);
+        const existing = await this.deliveryChargeModel
+            .findOne({ pincode })
+            .select('createdBy')
+            .lean();
+        if (existing?.createdBy && existing.createdBy.toString() !== superAdminId) {
+            throw new common_1.ForbiddenException('You cannot edit delivery charge created by another super admin');
+        }
+        const updated = await this.deliveryChargeModel
+            .findOneAndUpdate({ pincode }, {
+            $set: {
+                pincode,
+                charge,
+                createdBy: new mongoose_2.Types.ObjectId(superAdminId),
+            },
+        }, { new: true, upsert: true })
+            .lean();
+        return updated;
+    }
     async remove(pincode) {
         this.assertValidPincode(pincode);
+        const res = await this.deliveryChargeModel.deleteOne({ pincode });
+        return { deletedCount: res.deletedCount };
+    }
+    async removeForSuperAdmin(superAdminId, pincode) {
+        if (!mongoose_2.Types.ObjectId.isValid(superAdminId)) {
+            throw new common_1.BadRequestException('SuperAdmin id is invalid');
+        }
+        this.assertValidPincode(pincode);
+        const existing = await this.deliveryChargeModel
+            .findOne({ pincode })
+            .select('createdBy')
+            .lean();
+        if (!existing) {
+            return { deletedCount: 0 };
+        }
+        if (existing.createdBy && existing.createdBy.toString() !== superAdminId) {
+            throw new common_1.ForbiddenException('You cannot delete delivery charge created by another super admin');
+        }
         const res = await this.deliveryChargeModel.deleteOne({ pincode });
         return { deletedCount: res.deletedCount };
     }

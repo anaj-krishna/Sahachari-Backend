@@ -71,6 +71,8 @@ let AuthService = class AuthService {
             status,
             address: dto.address,
             serviceablePincodes: dto.serviceablePincodes,
+            address2: dto.address2,
+            mobileNumber: dto.mobileNumber,
         });
         return {
             id: user._id.toString(),

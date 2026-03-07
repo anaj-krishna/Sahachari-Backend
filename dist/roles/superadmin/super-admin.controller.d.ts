@@ -38,17 +38,17 @@ export declare class SuperAdminController {
     }> & {
         __v: number;
     }>;
-    listDeliveryCharges(): Promise<(import("../../delivery-charges/delivery-charge.schema").DeliveryCharge & import("mongoose").Document<Types.ObjectId, any, any, Record<string, any>, {}> & Required<{
+    listDeliveryCharges(req: any): Promise<(import("../../delivery-charges/delivery-charge.schema").DeliveryCharge & import("mongoose").Document<Types.ObjectId, any, any, Record<string, any>, {}> & Required<{
         _id: Types.ObjectId;
     }> & {
         __v: number;
     })[]>;
-    upsertDeliveryCharge(pincode: string, dto: UpsertDeliveryChargeDto): Promise<import("../../delivery-charges/delivery-charge.schema").DeliveryCharge & import("mongoose").Document<Types.ObjectId, any, any, Record<string, any>, {}> & Required<{
+    upsertDeliveryCharge(req: any, pincode: string, dto: UpsertDeliveryChargeDto): Promise<import("../../delivery-charges/delivery-charge.schema").DeliveryCharge & import("mongoose").Document<Types.ObjectId, any, any, Record<string, any>, {}> & Required<{
         _id: Types.ObjectId;
     }> & {
         __v: number;
     }>;
-    deleteDeliveryCharge(pincode: string): Promise<{
+    deleteDeliveryCharge(req: any, pincode: string): Promise<{
         deletedCount: number;
     }>;
     getStorekeepers(req: any): Promise<Types.ObjectId[]>;

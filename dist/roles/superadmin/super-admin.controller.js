@@ -69,14 +69,17 @@ let SuperAdminController = class SuperAdminController {
         const superAdminId = req.user?.userId ?? req.user;
         return this.superAdminService.getProfile(superAdminId);
     }
-    listDeliveryCharges() {
-        return this.deliveryChargesService.listAll();
+    listDeliveryCharges(req) {
+        const superAdminId = req.user?.userId ?? req.user;
+        return this.deliveryChargesService.listAllForSuperAdmin(superAdminId);
     }
-    upsertDeliveryCharge(pincode, dto) {
-        return this.deliveryChargesService.upsert(pincode, dto.charge);
+    upsertDeliveryCharge(req, pincode, dto) {
+        const superAdminId = req.user?.userId ?? req.user;
+        return this.deliveryChargesService.upsertForSuperAdmin(superAdminId, pincode, dto.charge);
     }
-    deleteDeliveryCharge(pincode) {
-        return this.deliveryChargesService.remove(pincode);
+    deleteDeliveryCharge(req, pincode) {
+        const superAdminId = req.user?.userId ?? req.user;
+        return this.deliveryChargesService.removeForSuperAdmin(superAdminId, pincode);
     }
     async getStorekeepers(req) {
         const superAdminId = req.user?.userId ?? req.user;
@@ -240,25 +243,28 @@ __decorate([
 __decorate([
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     (0, common_1.Get)('delivery-charges'),
+    __param(0, (0, common_1.Req)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", []),
+    __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", void 0)
 ], SuperAdminController.prototype, "listDeliveryCharges", null);
 __decorate([
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     (0, common_1.Put)('delivery-charges/:pincode'),
-    __param(0, (0, common_1.Param)('pincode')),
-    __param(1, (0, common_1.Body)()),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Param)('pincode')),
+    __param(2, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, upsert_delivery_charge_dto_1.UpsertDeliveryChargeDto]),
+    __metadata("design:paramtypes", [Object, String, upsert_delivery_charge_dto_1.UpsertDeliveryChargeDto]),
     __metadata("design:returntype", void 0)
 ], SuperAdminController.prototype, "upsertDeliveryCharge", null);
 __decorate([
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     (0, common_1.Delete)('delivery-charges/:pincode'),
-    __param(0, (0, common_1.Param)('pincode')),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Param)('pincode')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [Object, String]),
     __metadata("design:returntype", void 0)
 ], SuperAdminController.prototype, "deleteDeliveryCharge", null);
 __decorate([

@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document } from 'mongoose';
+import { Document, Types } from 'mongoose';
 
 export type DeliveryChargeDocument = DeliveryCharge & Document;
 
@@ -10,6 +10,9 @@ export class DeliveryCharge {
 
   @Prop({ required: true, min: 0 })
   charge: number;
+
+  @Prop({ type: Types.ObjectId, ref: 'SuperAdmin', required: false })
+  createdBy?: Types.ObjectId;
 }
 
 export const DeliveryChargeSchema =

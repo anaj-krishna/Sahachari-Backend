@@ -91,23 +91,34 @@ export class SuperAdminController {
   // 🚚 Delivery charges management (SUPER ADMIN)
   @UseGuards(JwtAuthGuard)
   @Get('delivery-charges')
-  listDeliveryCharges() {
-    return this.deliveryChargesService.listAll();
+  listDeliveryCharges(@Req() req) {
+    const superAdminId = req.user?.userId ?? req.user;
+    return this.deliveryChargesService.listAllForSuperAdmin(superAdminId);
   }
 
   @UseGuards(JwtAuthGuard)
   @Put('delivery-charges/:pincode')
   upsertDeliveryCharge(
+    @Req() req,
     @Param('pincode') pincode: string,
     @Body() dto: UpsertDeliveryChargeDto,
   ) {
-    return this.deliveryChargesService.upsert(pincode, dto.charge);
+    const superAdminId = req.user?.userId ?? req.user;
+    return this.deliveryChargesService.upsertForSuperAdmin(
+      superAdminId,
+      pincode,
+      dto.charge,
+    );
   }
 
   @UseGuards(JwtAuthGuard)
   @Delete('delivery-charges/:pincode')
-  deleteDeliveryCharge(@Param('pincode') pincode: string) {
-    return this.deliveryChargesService.remove(pincode);
+  deleteDeliveryCharge(@Req() req, @Param('pincode') pincode: string) {
+    const superAdminId = req.user?.userId ?? req.user;
+    return this.deliveryChargesService.removeForSuperAdmin(
+      superAdminId,
+      pincode,
+    );
   }
 
   // 🧾 Get Storekeepers created by this SuperAdmin
