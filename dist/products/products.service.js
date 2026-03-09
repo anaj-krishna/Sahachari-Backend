@@ -17,6 +17,7 @@ const common_1 = require("@nestjs/common");
 const mongoose_1 = require("@nestjs/mongoose");
 const mongoose_2 = require("mongoose");
 const product_schema_1 = require("./product.schema");
+const pricing_1 = require("./pricing");
 let ProductsService = class ProductsService {
     productModel;
     constructor(productModel) {
@@ -41,7 +42,7 @@ let ProductsService = class ProductsService {
         });
         return {
             ...product,
-            finalPrice: this.calculateFinalPrice(product),
+            finalPrice: (0, pricing_1.calculateFinalPrice)(product),
         };
     }
     async updateProduct(storeId, productId, dto) {
@@ -87,7 +88,7 @@ let ProductsService = class ProductsService {
         });
         return {
             ...product,
-            finalPrice: this.calculateFinalPrice(product),
+            finalPrice: (0, pricing_1.calculateFinalPrice)(product),
         };
     }
     async findAll(filters) {
@@ -101,7 +102,7 @@ let ProductsService = class ProductsService {
         const products = await this.productModel.find(query).lean();
         return products.map((product) => ({
             ...product,
-            finalPrice: this.calculateFinalPrice(product),
+            finalPrice: (0, pricing_1.calculateFinalPrice)(product),
         }));
     }
     async getStores() {
@@ -113,30 +114,8 @@ let ProductsService = class ProductsService {
             .lean();
         return products.map((product) => ({
             ...product,
-            finalPrice: this.calculateFinalPrice(product),
+            finalPrice: (0, pricing_1.calculateFinalPrice)(product),
         }));
-    }
-    toNumberPrice(price) {
-        return Number(String(price || '').replace(/[^0-9.]/g, '')) || 0;
-    }
-    calculateFinalPrice(product) {
-        const basePrice = this.toNumberPrice(product.price);
-        if (!product.offers || product.offers.length === 0) {
-            return basePrice;
-        }
-        const now = new Date();
-        const activeOffer = product.offers.find((offer) => offer.isActive &&
-            (!offer.startDate || offer.startDate <= now) &&
-            (!offer.endDate || offer.endDate >= now));
-        if (!activeOffer)
-            return basePrice;
-        if (activeOffer.type === product_schema_1.DiscountType.PERCENTAGE) {
-            return Math.max(basePrice - (basePrice * activeOffer.value) / 100, 0);
-        }
-        if (activeOffer.type === product_schema_1.DiscountType.FLAT) {
-            return Math.max(basePrice - activeOffer.value, 0);
-        }
-        return basePrice;
     }
     async removeSingleOffer(productId) {
         const product = await this.productModel.findById(productId);

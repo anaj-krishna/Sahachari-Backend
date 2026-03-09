@@ -19,6 +19,7 @@ const mongoose_2 = require("mongoose");
 const order_schema_1 = require("./order.schema");
 const cart_service_1 = require("../cart/cart.service");
 const product_schema_1 = require("../products/product.schema");
+const pricing_1 = require("../products/pricing");
 const users_service_1 = require("../users/users.service");
 const delivery_charges_service_1 = require("../delivery-charges/delivery-charges.service");
 let OrdersService = class OrdersService {
@@ -64,13 +65,13 @@ let OrdersService = class OrdersService {
                 if (!product) {
                     throw new common_1.NotFoundException(`Product ${item.productId.toString()} not found`);
                 }
-                const numericPrice = Number(String(product.price).replace(/[^0-9.]/g, ''));
+                const finalPrice = (0, pricing_1.calculateFinalPrice)(product);
                 orderItems.push({
                     productId: product._id,
                     quantity: item.quantity,
-                    price: numericPrice,
+                    price: finalPrice,
                 });
-                storeTotal += numericPrice * item.quantity;
+                storeTotal += finalPrice * item.quantity;
             }
             const order = await this.orderModel.create({
                 userId: new mongoose_2.Types.ObjectId(userId),
@@ -103,8 +104,8 @@ let OrdersService = class OrdersService {
         if (!product) {
             throw new common_1.NotFoundException(`Product ${productId} not found`);
         }
-        const numericPrice = Number(String(product.price).replace(/[^0-9.]/g, ''));
-        const itemsSubtotal = numericPrice * quantity;
+        const finalPrice = (0, pricing_1.calculateFinalPrice)(product);
+        const itemsSubtotal = finalPrice * quantity;
         const deliveryCharge = await this.deliveryChargesService.getChargeForPincode(deliveryAddress.zipCode);
         const totalAmount = itemsSubtotal + deliveryCharge;
         const storeId = product.storeId.toString();
@@ -120,7 +121,7 @@ let OrdersService = class OrdersService {
                 {
                     productId: product._id,
                     quantity,
-                    price: numericPrice,
+                    price: finalPrice,
                 },
             ],
             itemsSubtotal,

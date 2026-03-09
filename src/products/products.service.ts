@@ -3,6 +3,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Product, ProductDocument, DiscountType } from './product.schema';
+import { calculateFinalPrice } from './pricing';
 import { CreateProductDto } from './dto/create-product.dto';
 import { AddOfferDto } from './dto/add-offer.dto';
 
@@ -59,7 +60,7 @@ export class ProductsService {
     });
     return {
       ...product,
-      finalPrice: this.calculateFinalPrice(product),
+      finalPrice: calculateFinalPrice(product),
     };
   }
 
@@ -119,7 +120,7 @@ export class ProductsService {
     });
     return {
       ...product,
-      finalPrice: this.calculateFinalPrice(product),
+      finalPrice: calculateFinalPrice(product),
     };
   }
 
@@ -134,7 +135,7 @@ export class ProductsService {
     const products = await this.productModel.find(query).lean<LeanProduct[]>();
     return products.map((product) => ({
       ...product,
-      finalPrice: this.calculateFinalPrice(product),
+      finalPrice: calculateFinalPrice(product),
     }));
   }
 
@@ -153,42 +154,8 @@ export class ProductsService {
 
     return products.map((product) => ({
       ...product,
-      finalPrice: this.calculateFinalPrice(product),
+      finalPrice: calculateFinalPrice(product),
     }));
-  }
-
-  /* ================= HELPERS ================= */
-  private toNumberPrice(price: string | number): number {
-    return Number(String(price || '').replace(/[^0-9.]/g, '')) || 0;
-  }
-
-  private calculateFinalPrice(product: LeanProduct): number {
-    const basePrice = this.toNumberPrice(product.price);
-
-    if (!product.offers || product.offers.length === 0) {
-      return basePrice;
-    }
-
-    const now = new Date();
-
-    const activeOffer = product.offers.find(
-      (offer) =>
-        offer.isActive &&
-        (!offer.startDate || offer.startDate <= now) &&
-        (!offer.endDate || offer.endDate >= now),
-    );
-
-    if (!activeOffer) return basePrice;
-
-    if (activeOffer.type === DiscountType.PERCENTAGE) {
-      return Math.max(basePrice - (basePrice * activeOffer.value) / 100, 0);
-    }
-
-    if (activeOffer.type === DiscountType.FLAT) {
-      return Math.max(basePrice - activeOffer.value, 0);
-    }
-
-    return basePrice;
   }
 
   async removeSingleOffer(productId: string) {

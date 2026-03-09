@@ -96,8 +96,6 @@ export declare class ProductsService {
         category?: string;
         offers: LeanOffer[];
     }[]>;
-    private toNumberPrice;
-    private calculateFinalPrice;
     removeSingleOffer(productId: string): Promise<import("mongoose").Document<unknown, {}, ProductDocument, {}, import("mongoose").DefaultSchemaOptions> & Product & import("mongoose").Document<Types.ObjectId, any, any, Record<string, any>, {}> & Required<{
         _id: Types.ObjectId;
     }> & {

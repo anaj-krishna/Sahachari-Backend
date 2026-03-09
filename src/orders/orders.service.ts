@@ -10,6 +10,7 @@ import { Order, OrderDocument, OrderItem } from './order.schema';
 import { CartService } from '../cart/cart.service';
 import { CartItem } from '../cart/cart.schema';
 import { Product, ProductDocument } from '../products/product.schema';
+import { calculateFinalPrice } from '../products/pricing';
 import { PlaceOrderDto } from './dto/place-order.dto';
 import { UsersService } from '../users/users.service';
 import { PlaceSingleOrderDto } from './dto/place-single-order.dto';
@@ -73,17 +74,15 @@ export class OrdersService {
           );
         }
 
-        const numericPrice = Number(
-          String(product.price).replace(/[^0-9.]/g, ''),
-        );
+        const finalPrice = calculateFinalPrice(product);
 
         orderItems.push({
           productId: product._id,
           quantity: item.quantity,
-          price: numericPrice,
+          price: finalPrice,
         });
 
-        storeTotal += numericPrice * item.quantity;
+        storeTotal += finalPrice * item.quantity;
       }
 
       // 🔹 Create order with pickupAddress
@@ -130,9 +129,9 @@ export class OrdersService {
       throw new NotFoundException(`Product ${productId} not found`);
     }
 
-    const numericPrice = Number(String(product.price).replace(/[^0-9.]/g, ''));
+    const finalPrice = calculateFinalPrice(product);
 
-    const itemsSubtotal = numericPrice * quantity;
+    const itemsSubtotal = finalPrice * quantity;
 
     const deliveryCharge =
       await this.deliveryChargesService.getChargeForPincode(
@@ -157,7 +156,7 @@ export class OrdersService {
         {
           productId: product._id,
           quantity,
-          price: numericPrice,
+          price: finalPrice,
         },
       ],
       itemsSubtotal,
