@@ -10,6 +10,7 @@ import { StorekeeperModule } from './roles/storekeeper/storekeeper.module';
 import { DeliveryModule } from './roles/delivery/delivery.module';
 import { S3Module } from './s3/s3.module';
 import { SuperAdminModule } from './roles/superadmin/superadmin.module';
+import { GeminiModule } from './gemini/gemini.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { SuperAdminModule } from './roles/superadmin/superadmin.module';
     DeliveryModule,
     S3Module,
     SuperAdminModule,
+    GeminiModule,
   ],
 })
 export class AppModule {}
