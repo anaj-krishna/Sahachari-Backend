@@ -1,6 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-unsafe-return */
-/* eslint-disable prettier/prettier */
 import {
   Controller,
   Get,
@@ -122,28 +119,17 @@ export class StorekeeperController {
 
   /* ================= ORDER ACTIONS ================= */
 
-  @Post('orders/:id/accept')
-  acceptOrder(
-    @Req() req: Request & { user: { userId: string } },
-    @Param('id') orderId: string,
-  ) {
-    return this.ordersService.acceptOrder(req.user.userId, orderId);
-  }
-
-  @Post('orders/:id/reject')
-  rejectOrder(
-    @Req() req: Request & { user: { userId: string } },
-    @Param('id') orderId: string,
-  ) {
-    return this.ordersService.rejectOrder(req.user.userId, orderId);
-  }
-
   @Post('orders/:id/ready')
   markOrderReady(
     @Req() req: Request & { user: { userId: string } },
     @Param('id') orderId: string,
   ) {
-    return this.ordersService.markOrderReady(req.user.userId, orderId);
+    return this.ordersService.updateOrderStatus(
+      orderId,
+      'READY',
+      req.user.userId,
+      'STOREKEEPER',
+    );
   }
 
   /* ================= DELIVERY ASSIGNMENT ================= */

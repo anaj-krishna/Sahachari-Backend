@@ -43,5 +43,10 @@ export declare class UsersController {
     } & Required<{
         _id: import("mongoose").Types.ObjectId;
     }>) | null>;
+    deleteMe(req: Request & {
+        user: JwtUser;
+    }): Promise<{
+        message: string;
+    }>;
 }
 export {};

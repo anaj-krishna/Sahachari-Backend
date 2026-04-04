@@ -9,14 +9,21 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.PlaceOrderDto = void 0;
+exports.PlaceOrderDto = exports.PaymentMethod = void 0;
 const class_validator_1 = require("class-validator");
+var PaymentMethod;
+(function (PaymentMethod) {
+    PaymentMethod["UPI"] = "UPI";
+    PaymentMethod["CASH_ON_DELIVERY"] = "CASH_ON_DELIVERY";
+    PaymentMethod["SELF_PICKUP"] = "SELF_PICKUP";
+})(PaymentMethod || (exports.PaymentMethod = PaymentMethod = {}));
 class PlaceOrderDto {
     street;
     city;
     zipCode;
     phone;
     notes;
+    paymentMethod;
 }
 exports.PlaceOrderDto = PlaceOrderDto;
 __decorate([
@@ -43,4 +50,8 @@ __decorate([
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], PlaceOrderDto.prototype, "notes", void 0);
+__decorate([
+    (0, class_validator_1.IsEnum)(PaymentMethod),
+    __metadata("design:type", String)
+], PlaceOrderDto.prototype, "paymentMethod", void 0);
 //# sourceMappingURL=place-order.dto.js.map

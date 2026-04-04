@@ -19,26 +19,32 @@ const mongoose_2 = require("mongoose");
 const order_schema_1 = require("./order.schema");
 const cart_service_1 = require("../cart/cart.service");
 const product_schema_1 = require("../products/product.schema");
+const pricing_1 = require("../products/pricing");
 const users_service_1 = require("../users/users.service");
+const delivery_charges_service_1 = require("../delivery-charges/delivery-charges.service");
 let OrdersService = class OrdersService {
     orderModel;
     cartService;
     usersService;
+    deliveryChargesService;
     productModel;
-    constructor(orderModel, cartService, usersService, productModel) {
+    constructor(orderModel, cartService, usersService, deliveryChargesService, productModel) {
         this.orderModel = orderModel;
         this.cartService = cartService;
         this.usersService = usersService;
+        this.deliveryChargesService = deliveryChargesService;
         this.productModel = productModel;
     }
     async placeOrder(userId, dto) {
+        const { paymentMethod } = dto;
         const cart = await this.cartService.getCart(userId);
         if (!cart || cart.items.length === 0) {
             throw new common_1.BadRequestException('Cart is empty');
         }
         const checkoutId = `CHECKOUT-${Date.now()}-${Math.random()
             .toString(36)
-            .substr(2, 9)}`;
+            .substring(2, 9)}`;
+        const deliveryCharge = await this.deliveryChargesService.getChargeForPincode(dto.zipCode);
         const itemsByStore = new Map();
         for (const item of cart.items) {
             const storeId = item.storeId.toString();
@@ -60,23 +66,41 @@ let OrdersService = class OrdersService {
                 if (!product) {
                     throw new common_1.NotFoundException(`Product ${item.productId.toString()} not found`);
                 }
-                const numericPrice = Number(String(product.price).replace(/[^0-9.]/g, ''));
+                const finalPrice = (0, pricing_1.calculateFinalPrice)(product);
                 orderItems.push({
                     productId: product._id,
                     quantity: item.quantity,
-                    price: numericPrice,
+                    price: finalPrice,
                 });
-                storeTotal += numericPrice * item.quantity;
+                storeTotal += finalPrice * item.quantity;
+            }
+            const totalAmount = storeTotal + deliveryCharge;
+            let paymentStatus = 'PENDING';
+            let amountPaid = 0;
+            if (paymentMethod === 'UPI') {
+                paymentStatus = 'PENDING';
+            }
+            else if (paymentMethod === 'CASH_ON_DELIVERY') {
+                paymentStatus = 'PENDING';
+            }
+            else if (paymentMethod === 'SELF_PICKUP') {
+                paymentStatus = 'PENDING';
             }
             const order = await this.orderModel.create({
                 userId: new mongoose_2.Types.ObjectId(userId),
                 storeId: new mongoose_2.Types.ObjectId(storeId),
                 checkoutId,
                 items: orderItems,
-                totalAmount: storeTotal,
+                itemsSubtotal: storeTotal,
+                deliveryCharge,
+                totalAmount,
                 deliveryAddress: dto,
                 pickupAddress: storeUser.address,
                 status: 'PLACED',
+                paymentMethod,
+                paymentStatus,
+                amountPaid,
+                currency: 'INR',
             });
             createdOrders.push(order);
         }
@@ -89,7 +113,7 @@ let OrdersService = class OrdersService {
         };
     }
     async placeSingleOrder(userId, dto) {
-        const { productId, quantity, deliveryAddress } = dto;
+        const { productId, quantity, deliveryAddress, paymentMethod } = dto;
         if (quantity <= 0) {
             throw new common_1.BadRequestException('Quantity must be greater than 0');
         }
@@ -97,12 +121,25 @@ let OrdersService = class OrdersService {
         if (!product) {
             throw new common_1.NotFoundException(`Product ${productId} not found`);
         }
-        const numericPrice = Number(String(product.price).replace(/[^0-9.]/g, ''));
-        const totalAmount = numericPrice * quantity;
+        const finalPrice = (0, pricing_1.calculateFinalPrice)(product);
+        const itemsSubtotal = finalPrice * quantity;
+        const deliveryCharge = await this.deliveryChargesService.getChargeForPincode(deliveryAddress.zipCode);
+        const totalAmount = itemsSubtotal + deliveryCharge;
         const storeId = product.storeId.toString();
         const storeUser = await this.usersService.getById(storeId);
         if (!storeUser) {
             throw new common_1.NotFoundException(`Store/Admin user ${storeId} not found`);
+        }
+        let paymentStatus = 'PENDING';
+        const amountPaid = 0;
+        if (paymentMethod === 'UPI') {
+            paymentStatus = 'PENDING';
+        }
+        else if (paymentMethod === 'CASH_ON_DELIVERY') {
+            paymentStatus = 'PENDING';
+        }
+        else if (paymentMethod === 'SELF_PICKUP') {
+            paymentStatus = 'PENDING';
         }
         const order = await this.orderModel.create({
             userId: new mongoose_2.Types.ObjectId(userId),
@@ -112,13 +149,19 @@ let OrdersService = class OrdersService {
                 {
                     productId: product._id,
                     quantity,
-                    price: numericPrice,
+                    price: finalPrice,
                 },
             ],
+            itemsSubtotal,
+            deliveryCharge,
             totalAmount,
             deliveryAddress,
             pickupAddress: storeUser.address,
             status: 'PLACED',
+            paymentMethod,
+            paymentStatus,
+            amountPaid,
+            currency: 'INR',
         });
         return {
             message: 'Order placed successfully',
@@ -153,18 +196,119 @@ let OrdersService = class OrdersService {
             throw new common_1.NotFoundException('Order not found');
         return order;
     }
-    async cancelOrder(userId, orderId) {
-        const order = await this.orderModel.findOneAndUpdate({
-            _id: orderId,
-            userId: new mongoose_2.Types.ObjectId(userId),
-            status: { $ne: 'DELIVERED' },
-        }, {
-            $set: { status: 'CANCELLED' },
-        }, { new: true });
+    async updateOrderStatus(orderId, newStatus, userId, userRole = 'CUSTOMER') {
+        const transitionRules = {
+            CUSTOMER: {
+                CANCELLED: ['PLACED', 'ACCEPTED', 'READY'],
+            },
+            STOREKEEPER: {
+                READY: ['PLACED'],
+            },
+            DELIVERY: {
+                ACCEPTED: ['READY'],
+                PICKED_UP: ['ACCEPTED'],
+                DELIVERED: ['PICKED_UP'],
+                FAILED: ['PICKED_UP'],
+            },
+        };
+        const order = await this.orderModel.findById(orderId);
         if (!order) {
-            throw new common_1.NotFoundException('Order not found or cannot be cancelled');
+            throw new common_1.NotFoundException('Order not found');
         }
-        return order;
+        const query = { _id: orderId };
+        if (userRole === 'CUSTOMER') {
+            query.userId = new mongoose_2.Types.ObjectId(userId);
+            if (newStatus === 'CANCELLED' &&
+                !transitionRules.CUSTOMER.CANCELLED.includes(order.status)) {
+                throw new common_1.BadRequestException(`Cannot cancel order with status ${order.status}`);
+            }
+        }
+        else if (userRole === 'STOREKEEPER') {
+            query.storeId = new mongoose_2.Types.ObjectId(userId);
+            if (!transitionRules.STOREKEEPER[newStatus]?.includes(order.status)) {
+                throw new common_1.BadRequestException(`Cannot transition from ${order.status} to ${newStatus}`);
+            }
+        }
+        else if (userRole === 'DELIVERY') {
+            query.deliveryBoyId = new mongoose_2.Types.ObjectId(userId);
+            if (newStatus !== 'ACCEPTED' &&
+                !order.deliveryBoyId?.equals(new mongoose_2.Types.ObjectId(userId))) {
+                throw new common_1.BadRequestException('Order not assigned to you');
+            }
+            if (!transitionRules.DELIVERY[newStatus]?.includes(order.status)) {
+                throw new common_1.BadRequestException(`Cannot transition from ${order.status} to ${newStatus}`);
+            }
+        }
+        let updateObj = {
+            $set: { status: newStatus },
+        };
+        const generateReceiptString = (orderData) => {
+            const itemsText = orderData.items
+                .map((item, i) => `${i + 1}. Product: ${item.productId} | Qty: ${item.quantity} | Price: ${item.price}`)
+                .join(' || ');
+            return `
+ORDER RECEIPT
+--------------------------------
+Order ID: ${orderData._id}
+Checkout ID: ${orderData.checkoutId}
+User ID: ${orderData.userId}
+Store ID: ${orderData.storeId}
+
+Items:
+${itemsText}
+
+Subtotal: ₹${orderData.itemsSubtotal}
+Delivery Charge: ₹${orderData.deliveryCharge}
+Total: ₹${orderData.totalAmount}
+
+Payment Method: ${orderData.paymentMethod}
+Payment Status: SUCCESS
+
+Delivery Address:
+${orderData.deliveryAddress.street}, ${orderData.deliveryAddress.city} - ${orderData.deliveryAddress.zipCode}
+Phone: ${orderData.deliveryAddress.phone}
+
+Status: DELIVERED
+Date: ${new Date().toISOString()}
+--------------------------------
+`;
+        };
+        if (userRole === 'STOREKEEPER' &&
+            newStatus === 'READY' &&
+            order.paymentMethod === 'SELF_PICKUP') {
+            updateObj = {
+                $set: {
+                    status: 'DELIVERED',
+                    paymentStatus: 'SUCCESS',
+                    paidAt: new Date(),
+                    amountPaid: order.totalAmount,
+                    isPaymentVerified: true,
+                    receiptUrl: generateReceiptString(order),
+                },
+            };
+        }
+        if (userRole === 'DELIVERY' && newStatus === 'ACCEPTED') {
+            updateObj.$set.deliveryBoyId = new mongoose_2.Types.ObjectId(userId);
+            query.deliveryBoyId = null;
+        }
+        if (userRole === 'DELIVERY' && newStatus === 'DELIVERED') {
+            updateObj.$set.paymentStatus = 'SUCCESS';
+            updateObj.$set.amountPaid = order.totalAmount;
+            updateObj.$set.paidAt = new Date();
+            updateObj.$set.isPaymentVerified = true;
+            updateObj.$set.receiptUrl = generateReceiptString(order);
+        }
+        if (userRole !== 'DELIVERY' || newStatus === 'ACCEPTED') {
+            query.status = transitionRules[userRole][newStatus]?.[0] || order.status;
+        }
+        else {
+            query.status = transitionRules.DELIVERY[newStatus]?.[0];
+        }
+        const updatedOrder = await this.orderModel.findOneAndUpdate(query, updateObj, { new: true });
+        if (!updatedOrder) {
+            throw new common_1.NotFoundException(`Order not found or cannot transition to ${newStatus}`);
+        }
+        return updatedOrder;
     }
     async getOrdersByStore(storeId, status) {
         const query = {
@@ -189,45 +333,6 @@ let OrdersService = class OrdersService {
             .populate('userId', 'name email phone');
         if (!order)
             throw new common_1.NotFoundException('Order not found');
-        return order;
-    }
-    async acceptOrder(storeId, orderId) {
-        const order = await this.orderModel.findOneAndUpdate({
-            _id: orderId,
-            storeId: new mongoose_2.Types.ObjectId(storeId),
-            status: 'PLACED',
-        }, {
-            $set: { status: 'ACCEPTED' },
-        }, { new: true });
-        if (!order) {
-            throw new common_1.NotFoundException('Order not found or cannot be accepted');
-        }
-        return order;
-    }
-    async rejectOrder(storeId, orderId) {
-        const order = await this.orderModel.findOneAndUpdate({
-            _id: orderId,
-            storeId: new mongoose_2.Types.ObjectId(storeId),
-            status: 'PLACED',
-        }, {
-            $set: { status: 'REJECTED' },
-        }, { new: true });
-        if (!order) {
-            throw new common_1.NotFoundException('Order not found or cannot be rejected');
-        }
-        return order;
-    }
-    async markOrderReady(storeId, orderId) {
-        const order = await this.orderModel.findOneAndUpdate({
-            _id: orderId,
-            storeId: new mongoose_2.Types.ObjectId(storeId),
-            status: 'ACCEPTED',
-        }, {
-            $set: { status: 'READY' },
-        }, { new: true });
-        if (!order) {
-            throw new common_1.NotFoundException('Order not found or not in ACCEPTED status');
-        }
         return order;
     }
     async getAvailableDeliveryBoys(storeId, orderId) {
@@ -281,70 +386,16 @@ let OrdersService = class OrdersService {
         }
         return order;
     }
-    async acceptJob(deliveryBoyId, orderId) {
-        const order = await this.orderModel.findOneAndUpdate({
-            _id: orderId,
-            status: 'READY',
-            deliveryBoyId: null,
-        }, {
-            $set: {
-                status: 'ACCEPTED',
-                deliveryBoyId: new mongoose_2.Types.ObjectId(deliveryBoyId),
-            },
-        }, { new: true });
-        if (!order) {
-            throw new common_1.NotFoundException('Order not found, already assigned, or not in READY status');
-        }
-        return order;
-    }
-    async pickupOrder(deliveryBoyId, orderId) {
-        const order = await this.orderModel.findOneAndUpdate({
-            _id: orderId,
-            deliveryBoyId: new mongoose_2.Types.ObjectId(deliveryBoyId),
-            status: 'ACCEPTED',
-        }, {
-            $set: { status: 'PICKED_UP' },
-        }, { new: true });
-        if (!order) {
-            throw new common_1.NotFoundException('Order not found, not assigned to you, or not in ACCEPTED status');
-        }
-        return order;
-    }
-    async deliverOrder(deliveryBoyId, orderId) {
-        const order = await this.orderModel.findOneAndUpdate({
-            _id: orderId,
-            deliveryBoyId: new mongoose_2.Types.ObjectId(deliveryBoyId),
-            status: 'PICKED_UP',
-        }, {
-            $set: { status: 'DELIVERED' },
-        }, { new: true });
-        if (!order) {
-            throw new common_1.NotFoundException('Order not found, not assigned to you, or not in PICKED_UP status');
-        }
-        return order;
-    }
-    async failDelivery(deliveryBoyId, orderId) {
-        const order = await this.orderModel.findOneAndUpdate({
-            _id: orderId,
-            deliveryBoyId: new mongoose_2.Types.ObjectId(deliveryBoyId),
-            status: 'PICKED_UP',
-        }, {
-            $set: { status: 'FAILED' },
-        }, { new: true });
-        if (!order) {
-            throw new common_1.NotFoundException('Order not found, not assigned to you, or not in PICKED_UP status');
-        }
-        return order;
-    }
 };
 exports.OrdersService = OrdersService;
 exports.OrdersService = OrdersService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, mongoose_1.InjectModel)(order_schema_1.Order.name)),
-    __param(3, (0, mongoose_1.InjectModel)(product_schema_1.Product.name)),
+    __param(4, (0, mongoose_1.InjectModel)(product_schema_1.Product.name)),
     __metadata("design:paramtypes", [mongoose_2.Model,
         cart_service_1.CartService,
         users_service_1.UsersService,
+        delivery_charges_service_1.DeliveryChargesService,
         mongoose_2.Model])
 ], OrdersService);
 //# sourceMappingURL=orders.service.js.map

@@ -14,6 +14,7 @@ const order_schema_1 = require("./order.schema");
 const cart_module_1 = require("../cart/cart.module");
 const product_schema_1 = require("../products/product.schema");
 const users_module_1 = require("../users/users.module");
+const delivery_charges_module_1 = require("../delivery-charges/delivery-charges.module");
 let OrdersModule = class OrdersModule {
 };
 exports.OrdersModule = OrdersModule;
@@ -26,6 +27,7 @@ exports.OrdersModule = OrdersModule = __decorate([
             ]),
             cart_module_1.CartModule,
             users_module_1.UsersModule,
+            delivery_charges_module_1.DeliveryChargesModule,
         ],
         providers: [orders_service_1.OrdersService],
         exports: [orders_service_1.OrdersService],

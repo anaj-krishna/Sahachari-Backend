@@ -1,4 +1,3 @@
-/* eslint-disable prettier/prettier */
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { UsersService } from '../users/users.service';
 import { JwtService } from '@nestjs/jwt';
@@ -39,6 +38,8 @@ export class AuthService {
       status,
       address: dto.address,
       serviceablePincodes: dto.serviceablePincodes,
+      address2: dto.address2,
+      mobileNumber: dto.mobileNumber,
     });
 
     return {

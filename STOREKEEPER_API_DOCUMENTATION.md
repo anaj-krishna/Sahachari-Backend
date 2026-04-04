@@ -37,7 +37,7 @@ Content-Type: application/json
   "id": "696dc7c4d941d2c9a8f56e4d",
   "email": "abc@store.com",
   "role": "ADMIN",
-  "status": "PENDING",
+  "status": "ACTIVE",
   "message": "Registration successful. Awaiting admin approval."
 }
 ```
@@ -50,8 +50,7 @@ Content-Type: application/json
  - `address`: Required, string
  - `serviceablePincodes`: Required, non-empty array of strings
 
-**Status Description:**
-- `PENDING`: Account created but awaiting superadmin approval
+**Note:** Protected endpoints require `status=ACTIVE` (enforced by role guard).
 
 ### Login
 **Endpoint:** `POST /auth/login`
@@ -108,7 +107,7 @@ Content-Type: application/json
   "storeId": "store_id_123",
   "name": "Laptop Pro",
   "description": "High-performance laptop with 16GB RAM",
-  "price": 50000,
+  "price": "50000",
   "quantity": 10,
   "category": "Electronics",
   "images": ["img1.jpg", "img2.jpg"],
@@ -143,7 +142,8 @@ Authorization: Bearer YOUR_JWT_TOKEN
     "_id": "prod_1",
     "storeId": "store_id_123",
     "name": "Laptop Pro",
-    "price": 50000,
+    "price": "50000",
+    "finalPrice": 45000,
     "quantity": 10,
     "category": "Electronics",
     "description": "High-performance laptop",
@@ -154,7 +154,8 @@ Authorization: Bearer YOUR_JWT_TOKEN
     "_id": "prod_2",
     "storeId": "store_id_123",
     "name": "Mouse Wireless",
-    "price": 1500,
+    "price": "1500",
+    "finalPrice": 1500,
     "quantity": 50,
     "category": "Accessories"
   }
@@ -186,7 +187,8 @@ GET /storekeeper/products/65f4a3c9d1e2f3g4h5i6j7k8
   "storeId": "store_id_123",
   "name": "Laptop Pro",
   "description": "High-performance laptop",
-  "price": 50000,
+  "price": "50000",
+  "finalPrice": 45000,
   "quantity": 10,
   "category": "Electronics",
   "images": ["img1.jpg"],
@@ -213,7 +215,7 @@ Content-Type: application/json
 {
   "name": "Laptop Pro Max",
   "description": "Updated description",
-  "price": 55000,
+  "price": "55000",
   "quantity": 15,
   "category": "Electronics",
   "images": ["new_img1.jpg", "new_img2.jpg"]
@@ -227,7 +229,7 @@ Content-Type: application/json
   "storeId": "store_id_123",
   "name": "Laptop Pro Max",
   "description": "Updated description",
-  "price": 55000,
+  "price": "55000",
   "quantity": 15,
   "category": "Electronics",
   "images": ["new_img1.jpg", "new_img2.jpg"],
@@ -292,7 +294,7 @@ Content-Type: application/json
   "_id": "prod_1",
   "storeId": "store_id_123",
   "name": "Laptop Pro",
-  "price": 50000,
+  "price": "50000",
   "quantity": 10,
   "offers": [
     {
@@ -366,7 +368,7 @@ Content-Type: application/json
   "storeId": "store_id_123",
   "name": "Laptop Pro",
   "quantity": 25,
-  "price": 50000
+  "price": "50000"
 }
 ```
 
@@ -386,7 +388,7 @@ Authorization: Bearer YOUR_JWT_TOKEN
 ```
 
 **Query Parameters:**
-- `status` (optional): Filter by order status (PLACED, ACCEPTED, REJECTED, READY, DELIVERED, CANCELLED)
+- `status` (optional): Filter by order status (PLACED, READY, ACCEPTED, PICKED_UP, DELIVERED, FAILED, CANCELLED)
 
 **Examples:**
 ```
@@ -401,7 +403,11 @@ GET /storekeeper/orders?status=READY
 [
   {
     "_id": "order_1",
-    "userId": "customer_123",
+    "userId": {
+      "_id": "customer_123",
+      "name": "John Doe",
+      "email": "john@example.com"
+    },
     "storeId": "store_id_123",
     "checkoutId": "CHECKOUT-1705684920123-abc9d3f",
     "items": [
@@ -410,13 +416,14 @@ GET /storekeeper/orders?status=READY
         "productId": {
           "_id": "prod_1",
           "name": "Laptop Pro",
-          "price": 50000
+          "price": "50000"
         },
         "quantity": 1,
         "price": 50000
       }
     ],
     "totalAmount": 50000,
+    "pickupAddress": "Store Address, City",
     "deliveryAddress": {
       "street": "123 Main Street",
       "city": "New York",
@@ -452,18 +459,27 @@ GET /storekeeper/orders/65f4a3c9d1e2f3g4h5i6j7k8
 ```json
 {
   "_id": "65f4a3c9d1e2f3g4h5i6j7k8",
-  "userId": "customer_123",
+  "userId": {
+    "_id": "customer_123",
+    "name": "John Doe",
+    "email": "john@example.com"
+  },
   "storeId": "store_id_123",
   "checkoutId": "CHECKOUT-1705684920123-abc9d3f",
   "items": [
     {
       "_id": "order_item_1",
-      "productId": "prod_1",
+      "productId": {
+        "_id": "prod_1",
+        "name": "Laptop Pro",
+        "price": "50000"
+      },
       "quantity": 1,
       "price": 50000
     }
   ],
   "totalAmount": 50000,
+  "pickupAddress": "Store Address, City",
   "deliveryAddress": {
     "street": "123 Main Street",
     "city": "New York",
@@ -480,83 +496,7 @@ GET /storekeeper/orders/65f4a3c9d1e2f3g4h5i6j7k8
 
 ## Order Actions
 
-### 1. Accept Order
-**Endpoint:** `POST /storekeeper/orders/:id/accept`
-
-**Headers:**
-```
-Authorization: Bearer YOUR_JWT_TOKEN
-```
-
-**URL Parameters:**
-- `id`: Order MongoDB ID
-
-**Example:**
-```
-POST /storekeeper/orders/65f4a3c9d1e2f3g4h5i6j7k8/accept
-```
-
-**Precondition:**
-- Order status must be `PLACED`
-
-**Response:** `200 OK`
-```json
-{
-  "_id": "65f4a3c9d1e2f3g4h5i6j7k8",
-  "status": "ACCEPTED",
-  "updatedAt": "2025-01-19T10:05:00.000Z"
-}
-```
-
-**Error Response:**
-```json
-{
-  "statusCode": 404,
-  "message": "Order not found or cannot be accepted"
-}
-```
-
----
-
-### 2. Reject Order
-**Endpoint:** `POST /storekeeper/orders/:id/reject`
-
-**Headers:**
-```
-Authorization: Bearer YOUR_JWT_TOKEN
-```
-
-**URL Parameters:**
-- `id`: Order MongoDB ID
-
-**Example:**
-```
-POST /storekeeper/orders/65f4a3c9d1e2f3g4h5i6j7k8/reject
-```
-
-**Precondition:**
-- Order status must be `PLACED`
-
-**Response:** `200 OK`
-```json
-{
-  "_id": "65f4a3c9d1e2f3g4h5i6j7k8",
-  "status": "REJECTED",
-  "updatedAt": "2025-01-19T10:05:00.000Z"
-}
-```
-
-**Error Response:**
-```json
-{
-  "statusCode": 404,
-  "message": "Order not found or cannot be rejected"
-}
-```
-
----
-
-### 3. Mark Order as Ready
+### 1. Mark Order as Ready
 **Endpoint:** `POST /storekeeper/orders/:id/ready`
 
 **Headers:**
@@ -588,7 +528,16 @@ POST /storekeeper/orders/65f4a3c9d1e2f3g4h5i6j7k8/ready
 ```json
 {
   "statusCode": 404,
-  "message": "Order not found or not in PLACED status"
+  "message": "Order not found or cannot transition to READY"
+}
+```
+
+**Error Response (wrong status):**
+```json
+{
+  "statusCode": 400,
+  "message": "Cannot transition from ACCEPTED to READY",
+  "error": "Bad Request"
 }
 ```
 
@@ -616,24 +565,12 @@ GET /storekeeper/orders/65f4a3c9d1e2f3g4h5i6j7k8/available-delivery
 ```json
 {
   "orderId": "65f4a3c9d1e2f3g4h5i6j7k8",
-  "availableDeliveryBoys": [
-    {
-      "_id": "delivery_1",
-      "name": "Ahmed Ali",
-      "phone": "+1-234-567-8901",
-      "status": "available"
-    },
-    {
-      "_id": "delivery_2",
-      "name": "Muhammad Hassan",
-      "phone": "+1-234-567-8902",
-      "status": "available"
-    }
-  ]
+  "availableDeliveryBoys": [],
+  "message": "Delivery boy list not yet configured"
 }
 ```
 
-**Note:** Currently returns empty list. Will be implemented when user service integration is complete.
+**Note:** This is currently a placeholder and always returns an empty list.
 
 ---
 
@@ -647,17 +584,13 @@ This endpoint is not implemented in the current codebase. Storekeeper can list a
 ```
 PLACED (Order received)
   ↓
-(Storekeeper decides)
-  ├→ ACCEPTED (Accept order)
-  │    ↓
-  │  READY (Prepare order)
-  │    ↓
-  │  [Assign Delivery Boy]
-  │    ↓
-  │  DELIVERED (Order delivered)
-  │
-  └→ REJECTED (Reject order)
-     (Order cancelled by store)
+READY (Storekeeper marks as ready)
+  ↓
+ACCEPTED (Delivery partner accepts)
+  ↓
+PICKED_UP (Delivery partner picks up)
+  ↓
+DELIVERED (Delivered)  OR  FAILED (Delivery failed)
 ```
 
 ---
@@ -680,7 +613,7 @@ Authorization: Bearer <jwt_token>
 POST /storekeeper/products
 {
   "name": "Laptop",
-  "price": 50000,
+  "price": "50000",
   "quantity": 10
 }
 
@@ -697,16 +630,13 @@ GET /storekeeper/orders?status=PLACED
 # 5️⃣ View order details
 GET /storekeeper/orders/{orderId}
 
-# 6️⃣ Accept order
-POST /storekeeper/orders/{orderId}/accept
-
-# 7️⃣ Mark as ready
+# 6️⃣ Mark as ready
 POST /storekeeper/orders/{orderId}/ready
 
-# 8️⃣ Get available delivery boys
+# 7️⃣ Get available delivery boys
 GET /storekeeper/orders/{orderId}/available-delivery
 
-# 9️⃣ Assign delivery boy
+# 8️⃣ Assign delivery boy
 POST /storekeeper/orders/{orderId}/assign-delivery
 { "deliveryBoyId": "delivery_id_123" }
 ```
@@ -717,11 +647,10 @@ POST /storekeeper/orders/{orderId}/assign-delivery
 
 | Code | Message | Cause |
 |------|---------|-------|
-| 400 | Bad Request | Invalid input data |
+| 400 | Bad Request | Validation errors or business rule errors |
 | 401 | Unauthorized | Missing or invalid JWT token |
 | 403 | Forbidden | Not a STOREKEEPER role |
 | 404 | Not Found | Resource doesn't exist or wrong status |
-| 422 | Validation Failed | Invalid input validation |
 | 500 | Internal Server Error | Server-side error |
 
 ---
@@ -729,9 +658,8 @@ POST /storekeeper/orders/{orderId}/assign-delivery
 ## 💡 Best Practices
 
 1. **Monitor PLACED orders** - Check regularly for new orders
-2. **Accept/Reject quickly** - Customers expect fast responses
-3. **Update stock after accepting** - Ensure you have inventory
-4. **Mark READY promptly** - Once order is packaged
-5. **Assign delivery ASAP** - Get order to customer faster
-6. **Track order status** - Keep customers informed
-7. **Use status filters** - GET /storekeeper/orders?status=PLACED to see new orders only
+2. **Mark READY promptly** - Once order is packaged
+3. **Keep stock updated** - Avoid overselling
+4. **Assign delivery ASAP** - Once assignment is implemented
+5. **Track order status** - Keep customers informed
+6. **Use status filters** - `GET /storekeeper/orders?status=PLACED` to see new orders only

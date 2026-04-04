@@ -90,6 +90,15 @@ export declare const SuperAdminSchema: import("mongoose").Schema<SuperAdmin, imp
     }, "id"> & {
         id: string;
     }> | undefined;
+    pincode?: import("mongoose").SchemaDefinitionProperty<string | undefined, SuperAdmin, Document<unknown, {}, SuperAdmin, {
+        id: string;
+    }, import("mongoose").ResolveSchemaOptions<import("mongoose").DefaultSchemaOptions>> & Omit<SuperAdmin & Required<{
+        _id: Types.ObjectId;
+    }> & {
+        __v: number;
+    }, "id"> & {
+        id: string;
+    }> | undefined;
     location?: import("mongoose").SchemaDefinitionProperty<string, SuperAdmin, Document<unknown, {}, SuperAdmin, {
         id: string;
     }, import("mongoose").ResolveSchemaOptions<import("mongoose").DefaultSchemaOptions>> & Omit<SuperAdmin & Required<{
@@ -154,15 +163,6 @@ export declare const SuperAdminSchema: import("mongoose").Schema<SuperAdmin, imp
         id: string;
     }> | undefined;
     addressLine1?: import("mongoose").SchemaDefinitionProperty<string | undefined, SuperAdmin, Document<unknown, {}, SuperAdmin, {
-        id: string;
-    }, import("mongoose").ResolveSchemaOptions<import("mongoose").DefaultSchemaOptions>> & Omit<SuperAdmin & Required<{
-        _id: Types.ObjectId;
-    }> & {
-        __v: number;
-    }, "id"> & {
-        id: string;
-    }> | undefined;
-    pincode?: import("mongoose").SchemaDefinitionProperty<string | undefined, SuperAdmin, Document<unknown, {}, SuperAdmin, {
         id: string;
     }, import("mongoose").ResolveSchemaOptions<import("mongoose").DefaultSchemaOptions>> & Omit<SuperAdmin & Required<{
         _id: Types.ObjectId;

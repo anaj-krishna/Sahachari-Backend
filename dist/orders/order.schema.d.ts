@@ -1,5 +1,15 @@
 import { Document, Types } from 'mongoose';
 export type OrderDocument = Order & Document;
+export declare enum PaymentMethod {
+    CASH_ON_DELIVERY = "CASH_ON_DELIVERY",
+    SELF_PICKUP = "SELF_PICKUP"
+}
+export declare enum PaymentStatus {
+    PENDING = "PENDING",
+    SUCCESS = "SUCCESS",
+    FAILED = "FAILED",
+    REFUNDED = "REFUNDED"
+}
 export declare class OrderItem {
     productId: Types.ObjectId;
     quantity: number;
@@ -65,10 +75,22 @@ export declare class Order {
     checkoutId: string;
     deliveryBoyId?: Types.ObjectId;
     items: OrderItem[];
+    itemsSubtotal: number;
+    deliveryCharge: number;
     totalAmount: number;
     deliveryAddress: DeliveryAddress;
     pickupAddress: any;
     status: 'PLACED' | 'ACCEPTED' | 'REJECTED' | 'READY' | 'PICKED_UP' | 'DELIVERED' | 'FAILED' | 'CANCELLED';
+    paymentMethod: PaymentMethod;
+    paymentStatus: PaymentStatus;
+    transactionId?: string;
+    paymentGateway?: string;
+    paidAt?: Date;
+    paymentResponse?: any;
+    amountPaid?: number;
+    isPaymentVerified?: boolean;
+    currency?: string;
+    receiptUrl?: string;
 }
 export declare const OrderSchema: import("mongoose").Schema<Order, import("mongoose").Model<Order, any, any, any, (Document<unknown, any, Order, any, import("mongoose").DefaultSchemaOptions> & Order & {
     _id: Types.ObjectId;
@@ -134,6 +156,24 @@ export declare const OrderSchema: import("mongoose").Schema<Order, import("mongo
     }, "id"> & {
         id: string;
     }> | undefined;
+    itemsSubtotal?: import("mongoose").SchemaDefinitionProperty<number, Order, Document<unknown, {}, Order, {
+        id: string;
+    }, import("mongoose").ResolveSchemaOptions<import("mongoose").DefaultSchemaOptions>> & Omit<Order & {
+        _id: Types.ObjectId;
+    } & {
+        __v: number;
+    }, "id"> & {
+        id: string;
+    }> | undefined;
+    deliveryCharge?: import("mongoose").SchemaDefinitionProperty<number, Order, Document<unknown, {}, Order, {
+        id: string;
+    }, import("mongoose").ResolveSchemaOptions<import("mongoose").DefaultSchemaOptions>> & Omit<Order & {
+        _id: Types.ObjectId;
+    } & {
+        __v: number;
+    }, "id"> & {
+        id: string;
+    }> | undefined;
     totalAmount?: import("mongoose").SchemaDefinitionProperty<number, Order, Document<unknown, {}, Order, {
         id: string;
     }, import("mongoose").ResolveSchemaOptions<import("mongoose").DefaultSchemaOptions>> & Omit<Order & {
@@ -161,7 +201,97 @@ export declare const OrderSchema: import("mongoose").Schema<Order, import("mongo
     }, "id"> & {
         id: string;
     }> | undefined;
-    status?: import("mongoose").SchemaDefinitionProperty<"REJECTED" | "PLACED" | "ACCEPTED" | "READY" | "PICKED_UP" | "DELIVERED" | "FAILED" | "CANCELLED", Order, Document<unknown, {}, Order, {
+    status?: import("mongoose").SchemaDefinitionProperty<"REJECTED" | "FAILED" | "PLACED" | "ACCEPTED" | "READY" | "PICKED_UP" | "DELIVERED" | "CANCELLED", Order, Document<unknown, {}, Order, {
+        id: string;
+    }, import("mongoose").ResolveSchemaOptions<import("mongoose").DefaultSchemaOptions>> & Omit<Order & {
+        _id: Types.ObjectId;
+    } & {
+        __v: number;
+    }, "id"> & {
+        id: string;
+    }> | undefined;
+    paymentMethod?: import("mongoose").SchemaDefinitionProperty<PaymentMethod, Order, Document<unknown, {}, Order, {
+        id: string;
+    }, import("mongoose").ResolveSchemaOptions<import("mongoose").DefaultSchemaOptions>> & Omit<Order & {
+        _id: Types.ObjectId;
+    } & {
+        __v: number;
+    }, "id"> & {
+        id: string;
+    }> | undefined;
+    paymentStatus?: import("mongoose").SchemaDefinitionProperty<PaymentStatus, Order, Document<unknown, {}, Order, {
+        id: string;
+    }, import("mongoose").ResolveSchemaOptions<import("mongoose").DefaultSchemaOptions>> & Omit<Order & {
+        _id: Types.ObjectId;
+    } & {
+        __v: number;
+    }, "id"> & {
+        id: string;
+    }> | undefined;
+    transactionId?: import("mongoose").SchemaDefinitionProperty<string | undefined, Order, Document<unknown, {}, Order, {
+        id: string;
+    }, import("mongoose").ResolveSchemaOptions<import("mongoose").DefaultSchemaOptions>> & Omit<Order & {
+        _id: Types.ObjectId;
+    } & {
+        __v: number;
+    }, "id"> & {
+        id: string;
+    }> | undefined;
+    paymentGateway?: import("mongoose").SchemaDefinitionProperty<string | undefined, Order, Document<unknown, {}, Order, {
+        id: string;
+    }, import("mongoose").ResolveSchemaOptions<import("mongoose").DefaultSchemaOptions>> & Omit<Order & {
+        _id: Types.ObjectId;
+    } & {
+        __v: number;
+    }, "id"> & {
+        id: string;
+    }> | undefined;
+    paidAt?: import("mongoose").SchemaDefinitionProperty<Date | undefined, Order, Document<unknown, {}, Order, {
+        id: string;
+    }, import("mongoose").ResolveSchemaOptions<import("mongoose").DefaultSchemaOptions>> & Omit<Order & {
+        _id: Types.ObjectId;
+    } & {
+        __v: number;
+    }, "id"> & {
+        id: string;
+    }> | undefined;
+    paymentResponse?: import("mongoose").SchemaDefinitionProperty<any, Order, Document<unknown, {}, Order, {
+        id: string;
+    }, import("mongoose").ResolveSchemaOptions<import("mongoose").DefaultSchemaOptions>> & Omit<Order & {
+        _id: Types.ObjectId;
+    } & {
+        __v: number;
+    }, "id"> & {
+        id: string;
+    }> | undefined;
+    amountPaid?: import("mongoose").SchemaDefinitionProperty<number | undefined, Order, Document<unknown, {}, Order, {
+        id: string;
+    }, import("mongoose").ResolveSchemaOptions<import("mongoose").DefaultSchemaOptions>> & Omit<Order & {
+        _id: Types.ObjectId;
+    } & {
+        __v: number;
+    }, "id"> & {
+        id: string;
+    }> | undefined;
+    isPaymentVerified?: import("mongoose").SchemaDefinitionProperty<boolean | undefined, Order, Document<unknown, {}, Order, {
+        id: string;
+    }, import("mongoose").ResolveSchemaOptions<import("mongoose").DefaultSchemaOptions>> & Omit<Order & {
+        _id: Types.ObjectId;
+    } & {
+        __v: number;
+    }, "id"> & {
+        id: string;
+    }> | undefined;
+    currency?: import("mongoose").SchemaDefinitionProperty<string | undefined, Order, Document<unknown, {}, Order, {
+        id: string;
+    }, import("mongoose").ResolveSchemaOptions<import("mongoose").DefaultSchemaOptions>> & Omit<Order & {
+        _id: Types.ObjectId;
+    } & {
+        __v: number;
+    }, "id"> & {
+        id: string;
+    }> | undefined;
+    receiptUrl?: import("mongoose").SchemaDefinitionProperty<string | undefined, Order, Document<unknown, {}, Order, {
         id: string;
     }, import("mongoose").ResolveSchemaOptions<import("mongoose").DefaultSchemaOptions>> & Omit<Order & {
         _id: Types.ObjectId;

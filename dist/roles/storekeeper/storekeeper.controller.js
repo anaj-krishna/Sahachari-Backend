@@ -61,14 +61,8 @@ let StorekeeperController = class StorekeeperController {
     getStoreOrder(req, orderId) {
         return this.ordersService.getStoreOrderById(req.user.userId, orderId);
     }
-    acceptOrder(req, orderId) {
-        return this.ordersService.acceptOrder(req.user.userId, orderId);
-    }
-    rejectOrder(req, orderId) {
-        return this.ordersService.rejectOrder(req.user.userId, orderId);
-    }
     markOrderReady(req, orderId) {
-        return this.ordersService.markOrderReady(req.user.userId, orderId);
+        return this.ordersService.updateOrderStatus(orderId, 'READY', req.user.userId, 'STOREKEEPER');
     }
     getAvailableDeliveryBoys(req, orderId) {
         return this.ordersService.getAvailableDeliveryBoys(req.user.userId, orderId);
@@ -155,22 +149,6 @@ __decorate([
     __metadata("design:paramtypes", [Object, String]),
     __metadata("design:returntype", void 0)
 ], StorekeeperController.prototype, "getStoreOrder", null);
-__decorate([
-    (0, common_1.Post)('orders/:id/accept'),
-    __param(0, (0, common_1.Req)()),
-    __param(1, (0, common_1.Param)('id')),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, String]),
-    __metadata("design:returntype", void 0)
-], StorekeeperController.prototype, "acceptOrder", null);
-__decorate([
-    (0, common_1.Post)('orders/:id/reject'),
-    __param(0, (0, common_1.Req)()),
-    __param(1, (0, common_1.Param)('id')),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, String]),
-    __metadata("design:returntype", void 0)
-], StorekeeperController.prototype, "rejectOrder", null);
 __decorate([
     (0, common_1.Post)('orders/:id/ready'),
     __param(0, (0, common_1.Req)()),

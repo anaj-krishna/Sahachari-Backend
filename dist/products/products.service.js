@@ -17,6 +17,7 @@ const common_1 = require("@nestjs/common");
 const mongoose_1 = require("@nestjs/mongoose");
 const mongoose_2 = require("mongoose");
 const product_schema_1 = require("./product.schema");
+const pricing_1 = require("./pricing");
 let ProductsService = class ProductsService {
     productModel;
     constructor(productModel) {
@@ -28,14 +29,21 @@ let ProductsService = class ProductsService {
             storeId: new mongoose_2.Types.ObjectId(storeId),
         });
     }
-    async getStoreProductById(storeId, productId) {
-        const product = await this.productModel.findOne({
-            _id: productId,
-            storeId: new mongoose_2.Types.ObjectId(storeId),
-        });
+    async findProductByQuery(query) {
+        const product = await this.productModel.findOne(query).lean();
         if (!product)
             throw new common_1.NotFoundException('Product not found');
         return product;
+    }
+    async getStoreProductById(storeId, productId) {
+        const product = await this.findProductByQuery({
+            _id: new mongoose_2.Types.ObjectId(productId),
+            storeId: new mongoose_2.Types.ObjectId(storeId),
+        });
+        return {
+            ...product,
+            finalPrice: (0, pricing_1.calculateFinalPrice)(product),
+        };
     }
     async updateProduct(storeId, productId, dto) {
         const updatedProduct = await this.productModel.findOneAndUpdate({
@@ -75,12 +83,12 @@ let ProductsService = class ProductsService {
         return product;
     }
     async findById(id) {
-        const product = await this.productModel.findById(id).lean();
-        if (!product)
-            throw new common_1.NotFoundException('Product not found');
+        const product = await this.findProductByQuery({
+            _id: new mongoose_2.Types.ObjectId(id),
+        });
         return {
             ...product,
-            finalPrice: this.calculateFinalPrice(product),
+            finalPrice: (0, pricing_1.calculateFinalPrice)(product),
         };
     }
     async findAll(filters) {
@@ -94,38 +102,20 @@ let ProductsService = class ProductsService {
         const products = await this.productModel.find(query).lean();
         return products.map((product) => ({
             ...product,
-            finalPrice: this.calculateFinalPrice(product),
+            finalPrice: (0, pricing_1.calculateFinalPrice)(product),
         }));
     }
     async getStores() {
         return this.productModel.distinct('storeId');
     }
     async getProductsByStore(storeId) {
-        return this.productModel
+        const products = await this.productModel
             .find({ storeId: new mongoose_2.Types.ObjectId(storeId) })
             .lean();
-    }
-    toNumberPrice(price) {
-        return Number(String(price || '').replace(/[^0-9.]/g, '')) || 0;
-    }
-    calculateFinalPrice(product) {
-        const basePrice = this.toNumberPrice(product.price);
-        if (!product.offers || product.offers.length === 0) {
-            return basePrice;
-        }
-        const now = new Date();
-        const activeOffer = product.offers.find((offer) => offer.isActive &&
-            (!offer.startDate || offer.startDate <= now) &&
-            (!offer.endDate || offer.endDate >= now));
-        if (!activeOffer)
-            return basePrice;
-        if (activeOffer.type === product_schema_1.DiscountType.PERCENTAGE) {
-            return Math.max(basePrice - (basePrice * activeOffer.value) / 100, 0);
-        }
-        if (activeOffer.type === product_schema_1.DiscountType.FLAT) {
-            return Math.max(basePrice - activeOffer.value, 0);
-        }
-        return basePrice;
+        return products.map((product) => ({
+            ...product,
+            finalPrice: (0, pricing_1.calculateFinalPrice)(product),
+        }));
     }
     async removeSingleOffer(productId) {
         const product = await this.productModel.findById(productId);

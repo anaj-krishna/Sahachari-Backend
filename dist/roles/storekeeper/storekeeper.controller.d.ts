@@ -25,6 +25,7 @@ export declare class StorekeeperController {
             userId: string;
         };
     }): Promise<{
+        finalPrice: number;
         _id: import("mongoose").Types.ObjectId;
         storeId: import("mongoose").Types.ObjectId;
         name: string;
@@ -45,12 +46,23 @@ export declare class StorekeeperController {
         user: {
             userId: string;
         };
-    }, productId: string): Promise<import("mongoose").Document<unknown, {}, import("../../products/product.schema").ProductDocument, {}, import("mongoose").DefaultSchemaOptions> & import("../../products/product.schema").Product & import("mongoose").Document<import("mongoose").Types.ObjectId, any, any, Record<string, any>, {}> & Required<{
+    }, productId: string): Promise<{
+        finalPrice: number;
         _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
+        storeId: import("mongoose").Types.ObjectId;
+        name: string;
+        description?: string;
+        images?: string[];
+        quantity: number;
+        price: string;
+        category?: string;
+        offers: {
+            type: import("../../products/product.schema").DiscountType;
+            value: number;
+            isActive: boolean;
+            startDate?: Date;
+            endDate?: Date;
+        }[];
     }>;
     updateProduct(req: Request & {
         user: {
@@ -117,39 +129,11 @@ export declare class StorekeeperController {
     } & {
         id: string;
     }>;
-    acceptOrder(req: Request & {
-        user: {
-            userId: string;
-        };
-    }, orderId: string): Promise<import("mongoose").Document<unknown, {}, import("../../orders/order.schema").OrderDocument, {}, import("mongoose").DefaultSchemaOptions> & import("../../orders/order.schema").Order & import("mongoose").Document<import("mongoose").Types.ObjectId, any, any, Record<string, any>, {}> & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
-    }>;
-    rejectOrder(req: Request & {
-        user: {
-            userId: string;
-        };
-    }, orderId: string): Promise<import("mongoose").Document<unknown, {}, import("../../orders/order.schema").OrderDocument, {}, import("mongoose").DefaultSchemaOptions> & import("../../orders/order.schema").Order & import("mongoose").Document<import("mongoose").Types.ObjectId, any, any, Record<string, any>, {}> & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
-    }>;
     markOrderReady(req: Request & {
         user: {
             userId: string;
         };
-    }, orderId: string): Promise<import("mongoose").Document<unknown, {}, import("../../orders/order.schema").OrderDocument, {}, import("mongoose").DefaultSchemaOptions> & import("../../orders/order.schema").Order & import("mongoose").Document<import("mongoose").Types.ObjectId, any, any, Record<string, any>, {}> & Required<{
-        _id: import("mongoose").Types.ObjectId;
-    }> & {
-        __v: number;
-    } & {
-        id: string;
-    }>;
+    }, orderId: string): Promise<import("../../orders/order.schema").OrderDocument>;
     getAvailableDeliveryBoys(req: Request & {
         user: {
             userId: string;

@@ -28,6 +28,8 @@ import { SuperAdmin } from './super-admin.schema';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { OrdersService } from '../../orders/orders.service';
 import { ProductsService } from '../../products/products.service';
+import { DeliveryChargesService } from '../../delivery-charges/delivery-charges.service';
+import { UpsertDeliveryChargeDto } from '../../delivery-charges/dto/upsert-delivery-charge.dto';
 
 @Controller('super-admin/auth')
 export class SuperAdminController {
@@ -36,6 +38,7 @@ export class SuperAdminController {
     private readonly authService: AuthService,
     private readonly ordersService: OrdersService,
     private readonly productsService: ProductsService,
+    private readonly deliveryChargesService: DeliveryChargesService,
     @InjectModel(SuperAdmin.name)
     private readonly superAdminModel: Model<SuperAdmin>,
   ) {}
@@ -83,6 +86,39 @@ export class SuperAdminController {
   async getProfile(@Req() req) {
     const superAdminId = req.user?.userId ?? req.user;
     return this.superAdminService.getProfile(superAdminId);
+  }
+
+  // 🚚 Delivery charges management (SUPER ADMIN)
+  @UseGuards(JwtAuthGuard)
+  @Get('delivery-charges')
+  listDeliveryCharges(@Req() req) {
+    const superAdminId = req.user?.userId ?? req.user;
+    return this.deliveryChargesService.listAllForSuperAdmin(superAdminId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Put('delivery-charges/:pincode')
+  upsertDeliveryCharge(
+    @Req() req,
+    @Param('pincode') pincode: string,
+    @Body() dto: UpsertDeliveryChargeDto,
+  ) {
+    const superAdminId = req.user?.userId ?? req.user;
+    return this.deliveryChargesService.upsertForSuperAdmin(
+      superAdminId,
+      pincode,
+      dto.charge,
+    );
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete('delivery-charges/:pincode')
+  deleteDeliveryCharge(@Req() req, @Param('pincode') pincode: string) {
+    const superAdminId = req.user?.userId ?? req.user;
+    return this.deliveryChargesService.removeForSuperAdmin(
+      superAdminId,
+      pincode,
+    );
   }
 
   // 🧾 Get Storekeepers created by this SuperAdmin
@@ -241,30 +277,6 @@ export class SuperAdminController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Post('storekeepers/:storeId/orders/:id/accept')
-  async saAcceptOrder(
-    @Req() req,
-    @Param('storeId') storeId: string,
-    @Param('id') orderId: string,
-  ) {
-    const superAdminId = req.user?.userId ?? req.user;
-    await this.ensureMember(superAdminId, storeId, 'storekeepers');
-    return this.ordersService.acceptOrder(storeId, orderId);
-  }
-
-  @UseGuards(JwtAuthGuard)
-  @Post('storekeepers/:storeId/orders/:id/reject')
-  async saRejectOrder(
-    @Req() req,
-    @Param('storeId') storeId: string,
-    @Param('id') orderId: string,
-  ) {
-    const superAdminId = req.user?.userId ?? req.user;
-    await this.ensureMember(superAdminId, storeId, 'storekeepers');
-    return this.ordersService.rejectOrder(storeId, orderId);
-  }
-
-  @UseGuards(JwtAuthGuard)
   @Post('storekeepers/:storeId/orders/:id/ready')
   async saMarkOrderReady(
     @Req() req,
@@ -273,7 +285,12 @@ export class SuperAdminController {
   ) {
     const superAdminId = req.user?.userId ?? req.user;
     await this.ensureMember(superAdminId, storeId, 'storekeepers');
-    return this.ordersService.markOrderReady(storeId, orderId);
+    return this.ordersService.updateOrderStatus(
+      orderId,
+      'READY',
+      storeId,
+      'STOREKEEPER',
+    );
   }
 
   @UseGuards(JwtAuthGuard)
@@ -341,7 +358,12 @@ export class SuperAdminController {
   ) {
     const superAdminId = req.user?.userId ?? req.user;
     await this.ensureMember(superAdminId, deliveryBoyId, 'deliveryBoys');
-    return this.ordersService.acceptJob(deliveryBoyId, orderId);
+    return this.ordersService.updateOrderStatus(
+      orderId,
+      'ACCEPTED',
+      deliveryBoyId,
+      'DELIVERY',
+    );
   }
 
   @UseGuards(JwtAuthGuard)
@@ -353,7 +375,12 @@ export class SuperAdminController {
   ) {
     const superAdminId = req.user?.userId ?? req.user;
     await this.ensureMember(superAdminId, deliveryBoyId, 'deliveryBoys');
-    return this.ordersService.pickupOrder(deliveryBoyId, orderId);
+    return this.ordersService.updateOrderStatus(
+      orderId,
+      'PICKED_UP',
+      deliveryBoyId,
+      'DELIVERY',
+    );
   }
 
   @UseGuards(JwtAuthGuard)
@@ -365,7 +392,12 @@ export class SuperAdminController {
   ) {
     const superAdminId = req.user?.userId ?? req.user;
     await this.ensureMember(superAdminId, deliveryBoyId, 'deliveryBoys');
-    return this.ordersService.deliverOrder(deliveryBoyId, orderId);
+    return this.ordersService.updateOrderStatus(
+      orderId,
+      'DELIVERED',
+      deliveryBoyId,
+      'DELIVERY',
+    );
   }
 
   @UseGuards(JwtAuthGuard)
@@ -377,7 +409,12 @@ export class SuperAdminController {
   ) {
     const superAdminId = req.user?.userId ?? req.user;
     await this.ensureMember(superAdminId, deliveryBoyId, 'deliveryBoys');
-    return this.ordersService.failDelivery(deliveryBoyId, orderId);
+    return this.ordersService.updateOrderStatus(
+      orderId,
+      'FAILED',
+      deliveryBoyId,
+      'DELIVERY',
+    );
   }
 
   // 🏬 Create Storekeeper (SUPER ADMIN only)

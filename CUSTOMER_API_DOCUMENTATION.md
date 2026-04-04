@@ -98,10 +98,19 @@ Authorization: Bearer YOUR_JWT_TOKEN
 **Response:** `200 OK`
 ```json
 {
-  "userId": "user_id_123",
-  "email": "john@example.com",
+  "_id": "user_id_123",
   "name": "John Doe",
-  "role": "USER"
+  "email": "john@example.com",
+  "role": "USER",
+  "address": "123 Main Street, New York",
+  "serviceablePincodes": ["10001", "10002"],
+  "status": "ACTIVE",
+  "isVerified": false,
+  "mobileNumber": "9999999999",
+  "address2": "Apt 4B",
+  "image": null,
+  "createdAt": "2025-01-19T10:00:00.000Z",
+  "updatedAt": "2025-01-19T10:00:00.000Z"
 }
 ```
 
@@ -137,7 +146,7 @@ GET /customer/products?search=laptop&category=Electronics
     "storeId": "store_1",
     "name": "Laptop Pro",
     "description": "High-performance laptop",
-    "price": 50000,
+    "price": "50000",
     "finalPrice": 45000,
     "quantity": 10,
     "category": "Electronics",
@@ -180,7 +189,7 @@ GET /customer/products/65f4a3c9d1e2f3g4h5i6j7k8
   "storeId": "store_1",
   "name": "Laptop Pro",
   "description": "High-performance laptop",
-  "price": 50000,
+  "price": "50000",
   "finalPrice": 45000,
   "quantity": 10,
   "category": "Electronics",
@@ -226,7 +235,45 @@ Authorization: Bearer YOUR_JWT_TOKEN
 
 ---
 
-### 4. Get Products by Store
+### 4. Get Stores by Category (Serviceable Area)
+**Endpoint:** `GET /customer/category/:category/stores`
+
+**Headers:**
+```
+Authorization: Bearer YOUR_JWT_TOKEN
+```
+
+**URL Parameters:**
+- `category`: Category name
+
+**Example:**
+```
+GET /customer/category/Fruits/stores
+```
+
+**Response:** `200 OK`
+```json
+[
+  {
+    "category": "Fruits",
+    "stores": [
+      {
+        "_id": "store_id_1",
+        "name": "Storekeeper One",
+        "role": "ADMIN",
+        "serviceablePincodes": ["560001", "560002"]
+      }
+    ]
+  }
+]
+```
+
+**Notes:**
+- Stores are filtered to those whose `serviceablePincodes` intersect with the logged-in user's `serviceablePincodes`.
+
+---
+
+### 5. Get Products by Store
 **Endpoint:** `GET /customer/stores/:id/products`
 
 **Headers:**
@@ -249,7 +296,8 @@ GET /customer/stores/65f4a3c9d1e2f3g4h5i6j7k8/products
     "_id": "prod_1",
     "storeId": "store_1",
     "name": "Laptop Pro",
-    "price": 50000,
+    "price": "50000",
+    "finalPrice": 45000,
     "quantity": 10,
     "category": "Electronics"
   },
@@ -257,7 +305,8 @@ GET /customer/stores/65f4a3c9d1e2f3g4h5i6j7k8/products
     "_id": "prod_2",
     "storeId": "store_1",
     "name": "Mouse Wireless",
-    "price": 1500,
+    "price": "1500",
+    "finalPrice": 1500,
     "quantity": 50,
     "category": "Accessories"
   }
@@ -394,6 +443,32 @@ DELETE /customer/cart/item_1
   "message": "Cart not found"
 }
 ```
+
+---
+
+### 4. Update Cart Item Quantity
+**Endpoint:** `PATCH /customer/cart/:itemId`
+
+**Headers:**
+```
+Authorization: Bearer YOUR_JWT_TOKEN
+Content-Type: application/json
+```
+
+**URL Parameters:**
+- `itemId`: The subdocument ID of the cart item
+
+**Body:**
+```json
+{
+  "quantity": 3
+}
+```
+
+**Response:** `200 OK` (updated cart)
+
+**Validation:**
+- `quantity`: Required, number, minimum 1
 
 ---
 
@@ -555,10 +630,7 @@ Content-Type: application/json
       "phone": "+1-234-567-8900",
       "notes": "Leave at door"
     },
-    "pickupAddress": {
-      "street": "Store Street",
-      "city": "Store City"
-    },
+    "pickupAddress": "Store Address, City",
     "status": "PLACED",
     "createdAt": "2025-01-19T10:00:00.000Z"
   }
@@ -584,14 +656,7 @@ Content-Type: application/json
 Authorization: Bearer YOUR_JWT_TOKEN
 ```
 
-**Query Parameters:**
-- `checkoutId` (optional): Filter orders by checkout session
-
-**Examples:**
-```
-GET /customer/orders
-GET /customer/orders?checkoutId=CHECKOUT-1705684920123-abc9d3f
-```
+**Note:** This endpoint does not currently support filtering by `checkoutId`.
 
 **Response:** `200 OK`
 ```json
@@ -599,7 +664,10 @@ GET /customer/orders?checkoutId=CHECKOUT-1705684920123-abc9d3f
   {
     "_id": "order_1",
     "userId": "user_id_123",
-    "storeId": "store_1",
+    "storeId": {
+      "_id": "store_1",
+      "name": "Main Store"
+    },
     "checkoutId": "CHECKOUT-1705684920123-abc9d3f",
     "items": [
       {
@@ -607,7 +675,7 @@ GET /customer/orders?checkoutId=CHECKOUT-1705684920123-abc9d3f
         "productId": {
           "_id": "prod_1",
           "name": "Laptop Pro",
-          "price": 50000
+          "price": "50000"
         },
         "quantity": 2,
         "price": 50000
@@ -649,7 +717,15 @@ GET /customer/orders/65f4a3c9d1e2f3g4h5i6j7k8
   "items": [
     {
       "_id": "order_item_1",
-      "productId": "prod_1",
+      "productId": {
+        "_id": "prod_1",
+        "storeId": "store_1",
+        "name": "Laptop Pro",
+        "price": "50000",
+        "quantity": 10,
+        "category": "Electronics",
+        "offers": []
+      },
       "quantity": 2,
       "price": 50000
     }
@@ -711,21 +787,21 @@ POST /customer/orders/65f4a3c9d1e2f3g4h5i6j7k8/cancel
 ```
 
 **Restrictions:**
-- ❌ Cannot cancel if status is `DELIVERED`
-- ✅ Can cancel if order is not `DELIVERED`
+- ✅ Can cancel only while status is `PLACED`, `READY`, or `ACCEPTED`
+- ❌ Cannot cancel once status is `PICKED_UP`, `DELIVERED`, or `FAILED`
 
 **Error Responses:**
 ```json
 {
   "statusCode": 404,
-  "message": "Order not found or cannot be cancelled"
+  "message": "Order not found"
 }
 ```
 
 ```json
 {
   "statusCode": 400,
-  "message": "Cannot cancel delivered order"
+  "message": "Cannot cancel order with status PICKED_UP"
 }
 ```
 
@@ -742,9 +818,10 @@ Authorization: Bearer <jwt_token>
 ### Token Structure
 ```json
 {
-  "userId": "65f4a3c9d1e2f3g4h5i6j7k8",
+  "sub": "65f4a3c9d1e2f3g4h5i6j7k8",
   "email": "john@example.com",
   "role": "USER",
+  "status": "ACTIVE",
   "iat": 1705684800,
   "exp": 1705771200
 }
@@ -793,7 +870,6 @@ POST /customer/orders
 
 # 6️⃣ Get Orders
 GET /customer/orders
-GET /customer/orders?checkoutId=CHECKOUT-xxx
 
 # 7️⃣ Cancel Order
 POST /customer/orders/{orderId}/cancel
@@ -805,11 +881,10 @@ POST /customer/orders/{orderId}/cancel
 
 | Code | Message | Cause |
 |------|---------|-------|
-| 400 | Cart is empty | Cannot place order without items |
+| 400 | Bad Request | Validation errors or business rule errors (e.g., Cart is empty) |
 | 401 | Unauthorized | Missing or invalid JWT token |
 | 403 | Forbidden | Insufficient permissions (not a USER) |
 | 404 | Not found | Resource doesn't exist |
-| 422 | Validation failed | Invalid input data |
 | 500 | Internal server error | Server-side error |
 
 ---

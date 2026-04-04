@@ -6,6 +6,7 @@ import { Order, OrderSchema } from './order.schema';
 import { CartModule } from '../cart/cart.module';
 import { Product, ProductSchema } from '../products/product.schema';
 import { UsersModule } from 'src/users/users.module';
+import { DeliveryChargesModule } from '../delivery-charges/delivery-charges.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { UsersModule } from 'src/users/users.module';
     ]),
     CartModule, // needed to clear cart after placing order
     UsersModule,
+    DeliveryChargesModule,
   ],
   providers: [OrdersService],
   exports: [OrdersService],

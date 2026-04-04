@@ -3,6 +3,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Product, ProductDocument, DiscountType } from './product.schema';
+import { calculateFinalPrice } from './pricing';
 import { CreateProductDto } from './dto/create-product.dto';
 import { AddOfferDto } from './dto/add-offer.dto';
 
@@ -44,13 +45,23 @@ export class ProductsService {
     });
   }
 
-  async getStoreProductById(storeId: string, productId: string) {
-    const product = await this.productModel.findOne({
-      _id: productId,
-      storeId: new Types.ObjectId(storeId),
-    });
+  private async findProductByQuery(
+    query: Record<string, unknown>,
+  ): Promise<LeanProduct> {
+    const product = await this.productModel.findOne(query).lean<LeanProduct>();
     if (!product) throw new NotFoundException('Product not found');
     return product;
+  }
+
+  async getStoreProductById(storeId: string, productId: string) {
+    const product = await this.findProductByQuery({
+      _id: new Types.ObjectId(productId),
+      storeId: new Types.ObjectId(storeId),
+    });
+    return {
+      ...product,
+      finalPrice: calculateFinalPrice(product),
+    };
   }
 
   async updateProduct(storeId: string, productId: string, dto: any) {
@@ -104,11 +115,12 @@ export class ProductsService {
 
   /* ================= CUSTOMER ================= */
   async findById(id: string) {
-    const product = await this.productModel.findById(id).lean<LeanProduct>();
-    if (!product) throw new NotFoundException('Product not found');
+    const product = await this.findProductByQuery({
+      _id: new Types.ObjectId(id),
+    });
     return {
       ...product,
-      finalPrice: this.calculateFinalPrice(product),
+      finalPrice: calculateFinalPrice(product),
     };
   }
 
@@ -123,7 +135,7 @@ export class ProductsService {
     const products = await this.productModel.find(query).lean<LeanProduct[]>();
     return products.map((product) => ({
       ...product,
-      finalPrice: this.calculateFinalPrice(product),
+      finalPrice: calculateFinalPrice(product),
     }));
   }
 
@@ -136,43 +148,14 @@ export class ProductsService {
    * Used by BOTH customer & store/admin
    */
   async getProductsByStore(storeId: string) {
-    return this.productModel
+    const products = await this.productModel
       .find({ storeId: new Types.ObjectId(storeId) })
       .lean<LeanProduct[]>();
-  }
 
-  /* ================= HELPERS ================= */
-  private toNumberPrice(price: string | number): number {
-    return Number(String(price || '').replace(/[^0-9.]/g, '')) || 0;
-  }
-
-  private calculateFinalPrice(product: LeanProduct): number {
-    const basePrice = this.toNumberPrice(product.price);
-
-    if (!product.offers || product.offers.length === 0) {
-      return basePrice;
-    }
-
-    const now = new Date();
-
-    const activeOffer = product.offers.find(
-      (offer) =>
-        offer.isActive &&
-        (!offer.startDate || offer.startDate <= now) &&
-        (!offer.endDate || offer.endDate >= now),
-    );
-
-    if (!activeOffer) return basePrice;
-
-    if (activeOffer.type === DiscountType.PERCENTAGE) {
-      return Math.max(basePrice - (basePrice * activeOffer.value) / 100, 0);
-    }
-
-    if (activeOffer.type === DiscountType.FLAT) {
-      return Math.max(basePrice - activeOffer.value, 0);
-    }
-
-    return basePrice;
+    return products.map((product) => ({
+      ...product,
+      finalPrice: calculateFinalPrice(product),
+    }));
   }
 
   async removeSingleOffer(productId: string) {

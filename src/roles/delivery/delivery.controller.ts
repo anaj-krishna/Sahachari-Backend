@@ -72,7 +72,12 @@ export class DeliveryController {
     @Param('id') orderId: string,
     @Req() req: Request & { user: { userId: string } },
   ) {
-    return this.ordersService.acceptJob(req.user.userId, orderId);
+    return this.ordersService.updateOrderStatus(
+      orderId,
+      'ACCEPTED',
+      req.user.userId,
+      'DELIVERY',
+    );
   }
 
   /**
@@ -83,7 +88,12 @@ export class DeliveryController {
     @Param('id') orderId: string,
     @Req() req: Request & { user: { userId: string } },
   ) {
-    return this.ordersService.pickupOrder(req.user.userId, orderId);
+    return this.ordersService.updateOrderStatus(
+      orderId,
+      'PICKED_UP',
+      req.user.userId,
+      'DELIVERY',
+    );
   }
 
   /**
@@ -94,7 +104,12 @@ export class DeliveryController {
     @Param('id') orderId: string,
     @Req() req: Request & { user: { userId: string } },
   ) {
-    return this.ordersService.deliverOrder(req.user.userId, orderId);
+    return this.ordersService.updateOrderStatus(
+      orderId,
+      'DELIVERED',
+      req.user.userId,
+      'DELIVERY',
+    );
   }
 
   /**
@@ -105,6 +120,11 @@ export class DeliveryController {
     @Param('id') orderId: string,
     @Req() req: Request & { user: { userId: string } },
   ) {
-    return this.ordersService.failDelivery(req.user.userId, orderId);
+    return this.ordersService.updateOrderStatus(
+      orderId,
+      'FAILED',
+      req.user.userId,
+      'DELIVERY',
+    );
   }
 }
