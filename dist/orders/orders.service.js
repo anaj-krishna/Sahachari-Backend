@@ -36,13 +36,14 @@ let OrdersService = class OrdersService {
         this.productModel = productModel;
     }
     async placeOrder(userId, dto) {
+        const { paymentMethod } = dto;
         const cart = await this.cartService.getCart(userId);
         if (!cart || cart.items.length === 0) {
             throw new common_1.BadRequestException('Cart is empty');
         }
         const checkoutId = `CHECKOUT-${Date.now()}-${Math.random()
             .toString(36)
-            .substr(2, 9)}`;
+            .substring(2, 9)}`;
         const deliveryCharge = await this.deliveryChargesService.getChargeForPincode(dto.zipCode);
         const itemsByStore = new Map();
         for (const item of cart.items) {
@@ -73,6 +74,18 @@ let OrdersService = class OrdersService {
                 });
                 storeTotal += finalPrice * item.quantity;
             }
+            const totalAmount = storeTotal + deliveryCharge;
+            let paymentStatus = 'PENDING';
+            let amountPaid = 0;
+            if (paymentMethod === 'UPI') {
+                paymentStatus = 'PENDING';
+            }
+            else if (paymentMethod === 'CASH_ON_DELIVERY') {
+                paymentStatus = 'PENDING';
+            }
+            else if (paymentMethod === 'SELF_PICKUP') {
+                paymentStatus = 'PENDING';
+            }
             const order = await this.orderModel.create({
                 userId: new mongoose_2.Types.ObjectId(userId),
                 storeId: new mongoose_2.Types.ObjectId(storeId),
@@ -80,10 +93,14 @@ let OrdersService = class OrdersService {
                 items: orderItems,
                 itemsSubtotal: storeTotal,
                 deliveryCharge,
-                totalAmount: storeTotal + deliveryCharge,
+                totalAmount,
                 deliveryAddress: dto,
                 pickupAddress: storeUser.address,
                 status: 'PLACED',
+                paymentMethod,
+                paymentStatus,
+                amountPaid,
+                currency: 'INR',
             });
             createdOrders.push(order);
         }
@@ -96,7 +113,7 @@ let OrdersService = class OrdersService {
         };
     }
     async placeSingleOrder(userId, dto) {
-        const { productId, quantity, deliveryAddress } = dto;
+        const { productId, quantity, deliveryAddress, paymentMethod } = dto;
         if (quantity <= 0) {
             throw new common_1.BadRequestException('Quantity must be greater than 0');
         }
@@ -112,6 +129,17 @@ let OrdersService = class OrdersService {
         const storeUser = await this.usersService.getById(storeId);
         if (!storeUser) {
             throw new common_1.NotFoundException(`Store/Admin user ${storeId} not found`);
+        }
+        let paymentStatus = 'PENDING';
+        const amountPaid = 0;
+        if (paymentMethod === 'UPI') {
+            paymentStatus = 'PENDING';
+        }
+        else if (paymentMethod === 'CASH_ON_DELIVERY') {
+            paymentStatus = 'PENDING';
+        }
+        else if (paymentMethod === 'SELF_PICKUP') {
+            paymentStatus = 'PENDING';
         }
         const order = await this.orderModel.create({
             userId: new mongoose_2.Types.ObjectId(userId),
@@ -130,6 +158,10 @@ let OrdersService = class OrdersService {
             deliveryAddress,
             pickupAddress: storeUser.address,
             status: 'PLACED',
+            paymentMethod,
+            paymentStatus,
+            amountPaid,
+            currency: 'INR',
         });
         return {
             message: 'Order placed successfully',
@@ -207,20 +239,72 @@ let OrdersService = class OrdersService {
                 throw new common_1.BadRequestException(`Cannot transition from ${order.status} to ${newStatus}`);
             }
         }
+        let updateObj = {
+            $set: { status: newStatus },
+        };
+        const generateReceiptString = (orderData) => {
+            const itemsText = orderData.items
+                .map((item, i) => `${i + 1}. Product: ${item.productId} | Qty: ${item.quantity} | Price: ${item.price}`)
+                .join(' || ');
+            return `
+ORDER RECEIPT
+--------------------------------
+Order ID: ${orderData._id}
+Checkout ID: ${orderData.checkoutId}
+User ID: ${orderData.userId}
+Store ID: ${orderData.storeId}
+
+Items:
+${itemsText}
+
+Subtotal: ₹${orderData.itemsSubtotal}
+Delivery Charge: ₹${orderData.deliveryCharge}
+Total: ₹${orderData.totalAmount}
+
+Payment Method: ${orderData.paymentMethod}
+Payment Status: SUCCESS
+
+Delivery Address:
+${orderData.deliveryAddress.street}, ${orderData.deliveryAddress.city} - ${orderData.deliveryAddress.zipCode}
+Phone: ${orderData.deliveryAddress.phone}
+
+Status: DELIVERED
+Date: ${new Date().toISOString()}
+--------------------------------
+`;
+        };
+        if (userRole === 'STOREKEEPER' &&
+            newStatus === 'READY' &&
+            order.paymentMethod === 'SELF_PICKUP') {
+            updateObj = {
+                $set: {
+                    status: 'DELIVERED',
+                    paymentStatus: 'SUCCESS',
+                    paidAt: new Date(),
+                    amountPaid: order.totalAmount,
+                    isPaymentVerified: true,
+                    receiptUrl: generateReceiptString(order),
+                },
+            };
+        }
+        if (userRole === 'DELIVERY' && newStatus === 'ACCEPTED') {
+            updateObj.$set.deliveryBoyId = new mongoose_2.Types.ObjectId(userId);
+            query.deliveryBoyId = null;
+        }
+        if (userRole === 'DELIVERY' && newStatus === 'DELIVERED') {
+            updateObj.$set.paymentStatus = 'SUCCESS';
+            updateObj.$set.amountPaid = order.totalAmount;
+            updateObj.$set.paidAt = new Date();
+            updateObj.$set.isPaymentVerified = true;
+            updateObj.$set.receiptUrl = generateReceiptString(order);
+        }
         if (userRole !== 'DELIVERY' || newStatus === 'ACCEPTED') {
             query.status = transitionRules[userRole][newStatus]?.[0] || order.status;
         }
         else {
             query.status = transitionRules.DELIVERY[newStatus]?.[0];
         }
-        const updateObj = { $set: { status: newStatus } };
-        if (userRole === 'DELIVERY' && newStatus === 'ACCEPTED') {
-            updateObj.$set.deliveryBoyId = new mongoose_2.Types.ObjectId(userId);
-            query.deliveryBoyId = null;
-        }
-        const updatedOrder = await this.orderModel.findOneAndUpdate(query, updateObj, {
-            new: true,
-        });
+        const updatedOrder = await this.orderModel.findOneAndUpdate(query, updateObj, { new: true });
         if (!updatedOrder) {
             throw new common_1.NotFoundException(`Order not found or cannot transition to ${newStatus}`);
         }

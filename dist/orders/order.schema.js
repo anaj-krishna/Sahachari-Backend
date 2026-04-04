@@ -9,9 +9,21 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.OrderSchema = exports.Order = exports.DeliveryAddress = exports.OrderItemSchema = exports.OrderItem = void 0;
+exports.OrderSchema = exports.Order = exports.DeliveryAddress = exports.OrderItemSchema = exports.OrderItem = exports.PaymentStatus = exports.PaymentMethod = void 0;
 const mongoose_1 = require("@nestjs/mongoose");
 const mongoose_2 = require("mongoose");
+var PaymentMethod;
+(function (PaymentMethod) {
+    PaymentMethod["CASH_ON_DELIVERY"] = "CASH_ON_DELIVERY";
+    PaymentMethod["SELF_PICKUP"] = "SELF_PICKUP";
+})(PaymentMethod || (exports.PaymentMethod = PaymentMethod = {}));
+var PaymentStatus;
+(function (PaymentStatus) {
+    PaymentStatus["PENDING"] = "PENDING";
+    PaymentStatus["SUCCESS"] = "SUCCESS";
+    PaymentStatus["FAILED"] = "FAILED";
+    PaymentStatus["REFUNDED"] = "REFUNDED";
+})(PaymentStatus || (exports.PaymentStatus = PaymentStatus = {}));
 let OrderItem = class OrderItem {
     productId;
     quantity;
@@ -31,7 +43,7 @@ __decorate([
     __metadata("design:type", Number)
 ], OrderItem.prototype, "price", void 0);
 exports.OrderItem = OrderItem = __decorate([
-    (0, mongoose_1.Schema)({ timestamps: true })
+    (0, mongoose_1.Schema)({ timestamps: false })
 ], OrderItem);
 exports.OrderItemSchema = mongoose_1.SchemaFactory.createForClass(OrderItem);
 let DeliveryAddress = class DeliveryAddress {
@@ -59,7 +71,7 @@ __decorate([
     __metadata("design:type", String)
 ], DeliveryAddress.prototype, "phone", void 0);
 __decorate([
-    (0, mongoose_1.Prop)({ required: false }),
+    (0, mongoose_1.Prop)(),
     __metadata("design:type", String)
 ], DeliveryAddress.prototype, "notes", void 0);
 exports.DeliveryAddress = DeliveryAddress = __decorate([
@@ -78,6 +90,16 @@ let Order = class Order {
     deliveryAddress;
     pickupAddress;
     status;
+    paymentMethod;
+    paymentStatus;
+    transactionId;
+    paymentGateway;
+    paidAt;
+    paymentResponse;
+    amountPaid;
+    isPaymentVerified;
+    currency;
+    receiptUrl;
 };
 exports.Order = Order;
 __decorate([
@@ -121,9 +143,71 @@ __decorate([
     __metadata("design:type", Object)
 ], Order.prototype, "pickupAddress", void 0);
 __decorate([
-    (0, mongoose_1.Prop)({ default: 'PLACED' }),
+    (0, mongoose_1.Prop)({
+        type: String,
+        default: 'PLACED',
+        enum: [
+            'PLACED',
+            'ACCEPTED',
+            'REJECTED',
+            'READY',
+            'PICKED_UP',
+            'DELIVERED',
+            'FAILED',
+            'CANCELLED',
+        ],
+    }),
     __metadata("design:type", String)
 ], Order.prototype, "status", void 0);
+__decorate([
+    (0, mongoose_1.Prop)({
+        type: String,
+        enum: PaymentMethod,
+        required: true,
+        default: PaymentMethod.CASH_ON_DELIVERY,
+    }),
+    __metadata("design:type", String)
+], Order.prototype, "paymentMethod", void 0);
+__decorate([
+    (0, mongoose_1.Prop)({
+        type: String,
+        enum: PaymentStatus,
+        default: PaymentStatus.PENDING,
+    }),
+    __metadata("design:type", String)
+], Order.prototype, "paymentStatus", void 0);
+__decorate([
+    (0, mongoose_1.Prop)(),
+    __metadata("design:type", String)
+], Order.prototype, "transactionId", void 0);
+__decorate([
+    (0, mongoose_1.Prop)(),
+    __metadata("design:type", String)
+], Order.prototype, "paymentGateway", void 0);
+__decorate([
+    (0, mongoose_1.Prop)(),
+    __metadata("design:type", Date)
+], Order.prototype, "paidAt", void 0);
+__decorate([
+    (0, mongoose_1.Prop)({ type: Object }),
+    __metadata("design:type", Object)
+], Order.prototype, "paymentResponse", void 0);
+__decorate([
+    (0, mongoose_1.Prop)({ default: 0 }),
+    __metadata("design:type", Number)
+], Order.prototype, "amountPaid", void 0);
+__decorate([
+    (0, mongoose_1.Prop)({ default: false }),
+    __metadata("design:type", Boolean)
+], Order.prototype, "isPaymentVerified", void 0);
+__decorate([
+    (0, mongoose_1.Prop)({ default: 'INR' }),
+    __metadata("design:type", String)
+], Order.prototype, "currency", void 0);
+__decorate([
+    (0, mongoose_1.Prop)(),
+    __metadata("design:type", String)
+], Order.prototype, "receiptUrl", void 0);
 exports.Order = Order = __decorate([
     (0, mongoose_1.Schema)({ timestamps: true })
 ], Order);

@@ -28,151 +28,183 @@ export class OrdersService {
   ) {}
 
   // PLACE ORDER → from cart, split by store
-  async placeOrder(userId: string, dto: PlaceOrderDto) {
-    const cart = await this.cartService.getCart(userId);
+async placeOrder(userId: string, dto: PlaceOrderDto) {
+  const { paymentMethod } = dto;
 
-    if (!cart || cart.items.length === 0) {
-      throw new BadRequestException('Cart is empty');
-    }
+  const cart = await this.cartService.getCart(userId);
 
-    // Generate unique checkoutId
-    const checkoutId = `CHECKOUT-${Date.now()}-${Math.random()
-      .toString(36)
-      .substr(2, 9)}`;
-
-    const deliveryCharge =
-      await this.deliveryChargesService.getChargeForPincode(dto.zipCode);
-
-    // Group cart items by storeId (admin user)
-    const itemsByStore = new Map<string, CartItem[]>();
-    for (const item of cart.items) {
-      const storeId = item.storeId.toString();
-      if (!itemsByStore.has(storeId)) {
-        itemsByStore.set(storeId, []);
-      }
-      itemsByStore.get(storeId)!.push(item);
-    }
-
-    const createdOrders: OrderDocument[] = [];
-
-    for (const [storeId, items] of itemsByStore.entries()) {
-      let storeTotal = 0;
-      const orderItems: OrderItem[] = [];
-
-      // 🔹 Get Store/Admin user (for pickup address)
-      const storeUser = await this.usersService.getById(storeId);
-      if (!storeUser) {
-        throw new NotFoundException(`Store/Admin user ${storeId} not found`);
-      }
-
-      for (const item of items) {
-        const product = await this.productModel.findById(item.productId);
-
-        if (!product) {
-          throw new NotFoundException(
-            `Product ${item.productId.toString()} not found`,
-          );
-        }
-
-        const finalPrice = calculateFinalPrice(product);
-
-        orderItems.push({
-          productId: product._id,
-          quantity: item.quantity,
-          price: finalPrice,
-        });
-
-        storeTotal += finalPrice * item.quantity;
-      }
-
-      // 🔹 Create order with pickupAddress
-      const order = await this.orderModel.create({
-        userId: new Types.ObjectId(userId),
-        storeId: new Types.ObjectId(storeId),
-        checkoutId,
-        items: orderItems,
-        itemsSubtotal: storeTotal,
-        deliveryCharge,
-        totalAmount: storeTotal + deliveryCharge,
-        deliveryAddress: dto, // Customer address
-        pickupAddress: storeUser.address, // 🆕 Store/Admin address
-        status: 'PLACED',
-      });
-
-      createdOrders.push(order);
-    }
-
-    // Clear cart after placing all orders
-    await this.cartService.clearCart(userId);
-
-    return {
-      checkoutId,
-      ordersCount: createdOrders.length,
-      totalAmount: createdOrders.reduce(
-        (sum, order) => sum + order.totalAmount,
-        0,
-      ),
-      orders: createdOrders,
-    };
+  if (!cart || cart.items.length === 0) {
+    throw new BadRequestException('Cart is empty');
   }
 
-  async placeSingleOrder(userId: string, dto: PlaceSingleOrderDto) {
-    const { productId, quantity, deliveryAddress } = dto;
+  // Generate checkoutId
+  const checkoutId = `CHECKOUT-${Date.now()}-${Math.random()
+    .toString(36)
+    .substring(2, 9)}`;
 
-    if (quantity <= 0) {
-      throw new BadRequestException('Quantity must be greater than 0');
+  const deliveryCharge =
+    await this.deliveryChargesService.getChargeForPincode(dto.zipCode);
+
+  // Group by store
+  const itemsByStore = new Map<string, CartItem[]>();
+  for (const item of cart.items) {
+    const storeId = item.storeId.toString();
+    if (!itemsByStore.has(storeId)) {
+      itemsByStore.set(storeId, []);
     }
+    itemsByStore.get(storeId)!.push(item);
+  }
 
-    // 🔹 Get product
-    const product = await this.productModel.findById(productId);
-    if (!product) {
-      throw new NotFoundException(`Product ${productId} not found`);
-    }
+  const createdOrders: OrderDocument[] = [];
 
-    const finalPrice = calculateFinalPrice(product);
+  for (const [storeId, items] of itemsByStore.entries()) {
+    let storeTotal = 0;
+    const orderItems: OrderItem[] = [];
 
-    const itemsSubtotal = finalPrice * quantity;
-
-    const deliveryCharge =
-      await this.deliveryChargesService.getChargeForPincode(
-        deliveryAddress.zipCode,
-      );
-
-    const totalAmount = itemsSubtotal + deliveryCharge;
-
-    // 🔹 Get store/admin user for pickup address
-    const storeId = product.storeId.toString();
     const storeUser = await this.usersService.getById(storeId);
     if (!storeUser) {
       throw new NotFoundException(`Store/Admin user ${storeId} not found`);
     }
 
-    // 🔹 Create order
+    for (const item of items) {
+      const product = await this.productModel.findById(item.productId);
+
+      if (!product) {
+        throw new NotFoundException(
+          `Product ${item.productId.toString()} not found`,
+        );
+      }
+
+      const finalPrice = calculateFinalPrice(product);
+
+      orderItems.push({
+        productId: product._id,
+        quantity: item.quantity,
+        price: finalPrice,
+      });
+
+      storeTotal += finalPrice * item.quantity;
+    }
+
+    const totalAmount = storeTotal + deliveryCharge;
+
+    // 🔥 Payment Logic
+    let paymentStatus = 'PENDING';
+    let amountPaid = 0;
+
+    if (paymentMethod === 'UPI') {
+      paymentStatus = 'PENDING'; // wait for gateway success
+    } else if (paymentMethod === 'CASH_ON_DELIVERY') {
+      paymentStatus = 'PENDING';
+    } else if (paymentMethod === 'SELF_PICKUP') {
+      paymentStatus = 'PENDING'; // or SUCCESS if prepaid
+    }
+
     const order = await this.orderModel.create({
       userId: new Types.ObjectId(userId),
       storeId: new Types.ObjectId(storeId),
-      checkoutId: `SINGLE-${Date.now()}`,
-      items: [
-        {
-          productId: product._id,
-          quantity,
-          price: finalPrice,
-        },
-      ],
-      itemsSubtotal,
+      checkoutId,
+      items: orderItems,
+      itemsSubtotal: storeTotal,
       deliveryCharge,
       totalAmount,
-      deliveryAddress, // customer
-      pickupAddress: storeUser.address, // admin/store
+      deliveryAddress: dto,
+      pickupAddress: storeUser.address,
       status: 'PLACED',
+
+      // ✅ Payment fields
+      paymentMethod,
+      paymentStatus,
+      amountPaid,
+      currency: 'INR',
     });
 
-    return {
-      message: 'Order placed successfully',
-      order,
-    };
+    createdOrders.push(order);
   }
 
+  // Clear cart
+  await this.cartService.clearCart(userId);
+
+  return {
+    checkoutId,
+    ordersCount: createdOrders.length,
+    totalAmount: createdOrders.reduce(
+      (sum, order) => sum + order.totalAmount,
+      0,
+    ),
+    orders: createdOrders,
+  };
+}
+async placeSingleOrder(userId: string, dto: PlaceSingleOrderDto) {
+  const { productId, quantity, deliveryAddress, paymentMethod } = dto;
+
+  if (quantity <= 0) {
+    throw new BadRequestException('Quantity must be greater than 0');
+  }
+
+  const product = await this.productModel.findById(productId);
+  if (!product) {
+    throw new NotFoundException(`Product ${productId} not found`);
+  }
+
+  const finalPrice = calculateFinalPrice(product);
+  const itemsSubtotal = finalPrice * quantity;
+
+  const deliveryCharge =
+    await this.deliveryChargesService.getChargeForPincode(
+      deliveryAddress.zipCode,
+    );
+
+  const totalAmount = itemsSubtotal + deliveryCharge;
+
+  const storeId = product.storeId.toString();
+  const storeUser = await this.usersService.getById(storeId);
+  if (!storeUser) {
+    throw new NotFoundException(`Store/Admin user ${storeId} not found`);
+  }
+
+  // 🔥 Payment Logic
+  let paymentStatus = 'PENDING';
+  const  amountPaid = 0;
+
+  if (paymentMethod === 'UPI') {
+    paymentStatus = 'PENDING';
+  } else if (paymentMethod === 'CASH_ON_DELIVERY') {
+    paymentStatus = 'PENDING';
+  } else if (paymentMethod === 'SELF_PICKUP') {
+    paymentStatus = 'PENDING';
+  }
+
+  const order = await this.orderModel.create({
+    userId: new Types.ObjectId(userId),
+    storeId: new Types.ObjectId(storeId),
+    checkoutId: `SINGLE-${Date.now()}`,
+    items: [
+      {
+        productId: product._id,
+        quantity,
+        price: finalPrice,
+      },
+    ],
+    itemsSubtotal,
+    deliveryCharge,
+    totalAmount,
+    deliveryAddress,
+    pickupAddress: storeUser.address,
+    status: 'PLACED',
+
+    // ✅ Payment
+    paymentMethod,
+    paymentStatus,
+    amountPaid,
+    currency: 'INR',
+  });
+
+  return {
+    message: 'Order placed successfully',
+    order,
+  };
+}
   // GET ALL ORDERS for user (optionally filter by checkout)
   async getOrders(userId: string, checkoutId?: string) {
     const query: { userId: Types.ObjectId; checkoutId?: string } = {
@@ -207,112 +239,177 @@ export class OrdersService {
   }
 
   // GENERIC STATUS TRANSITION - Single function for all controllers
-  async updateOrderStatus(
-    orderId: string,
-    newStatus: string,
-    userId: string,
-    userRole: 'CUSTOMER' | 'STOREKEEPER' | 'DELIVERY' = 'CUSTOMER',
-  ): Promise<OrderDocument> {
-    // Define allowed transitions by role
-    const transitionRules: Record<string, Record<string, string[]>> = {
-      CUSTOMER: {
-        CANCELLED: ['PLACED', 'ACCEPTED', 'READY'], // Can cancel until picked up
-      },
-      STOREKEEPER: {
-        READY: ['PLACED'], // Storekeeper marks order as ready for delivery
-      },
-      DELIVERY: {
-        ACCEPTED: ['READY'], // Delivery boy accepts job
-        PICKED_UP: ['ACCEPTED'], // Picked up from store
-        DELIVERED: ['PICKED_UP'], // Delivered to customer
-        FAILED: ['PICKED_UP'], // Failed delivery
-      },
-    };
+ async updateOrderStatus(
+  orderId: string,
+  newStatus: string,
+  userId: string,
+  userRole: 'CUSTOMER' | 'STOREKEEPER' | 'DELIVERY' = 'CUSTOMER',
+): Promise<OrderDocument> {
+  const transitionRules: Record<string, Record<string, string[]>> = {
+    CUSTOMER: {
+      CANCELLED: ['PLACED', 'ACCEPTED', 'READY'],
+    },
+    STOREKEEPER: {
+      READY: ['PLACED'],
+    },
+    DELIVERY: {
+      ACCEPTED: ['READY'],
+      PICKED_UP: ['ACCEPTED'],
+      DELIVERED: ['PICKED_UP'],
+      FAILED: ['PICKED_UP'],
+    },
+  };
 
-    // Get the order first
-    const order = await this.orderModel.findById(orderId);
-    if (!order) {
-      throw new NotFoundException('Order not found');
-    }
+  const order = await this.orderModel.findById(orderId);
+  if (!order) {
+    throw new NotFoundException('Order not found');
+  }
 
-    // Build query based on role
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    const query: Record<string, any> = { _id: orderId };
+  const query: Record<string, any> = { _id: orderId };
 
-    // Validate permissions and transitions
-    if (userRole === 'CUSTOMER') {
-      query.userId = new Types.ObjectId(userId);
-      // Can only cancel their own orders
-      if (
-        newStatus === 'CANCELLED' &&
-        !transitionRules.CUSTOMER.CANCELLED.includes(order.status)
-      ) {
-        throw new BadRequestException(
-          `Cannot cancel order with status ${order.status}`,
-        );
-      }
-    } else if (userRole === 'STOREKEEPER') {
-      query.storeId = new Types.ObjectId(userId);
-      // Validate transition is allowed for storekeeper
-      if (!transitionRules.STOREKEEPER[newStatus]?.includes(order.status)) {
-        throw new BadRequestException(
-          `Cannot transition from ${order.status} to ${newStatus}`,
-        );
-      }
-    } else if (userRole === 'DELIVERY') {
-      query.deliveryBoyId = new Types.ObjectId(userId);
-      // Delivery boy can only work on assigned orders (except ACCEPTED which assigns them)
-      if (
-        newStatus !== 'ACCEPTED' &&
-        !order.deliveryBoyId?.equals(new Types.ObjectId(userId))
-      ) {
-        throw new BadRequestException('Order not assigned to you');
-      }
-      // Validate transition
-      if (!transitionRules.DELIVERY[newStatus]?.includes(order.status)) {
-        throw new BadRequestException(
-          `Cannot transition from ${order.status} to ${newStatus}`,
-        );
-      }
-    }
+  /* ---------------- ROLE VALIDATION ---------------- */
 
-    // Add status condition for non-DELIVERY role or when transitioning from READY
-    if (userRole !== 'DELIVERY' || newStatus === 'ACCEPTED') {
-      query.status = transitionRules[userRole][newStatus]?.[0] || order.status;
-    } else {
-      query.status = transitionRules.DELIVERY[newStatus]?.[0];
-    }
+  if (userRole === 'CUSTOMER') {
+    query.userId = new Types.ObjectId(userId);
 
-    // Build update object
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    const updateObj: Record<string, any> = { $set: { status: newStatus } };
-
-    // Special case: Delivery boy accepts job (assign deliveryBoyId)
-    if (userRole === 'DELIVERY' && newStatus === 'ACCEPTED') {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-      updateObj.$set.deliveryBoyId = new Types.ObjectId(userId);
-      // For ACCEPTED transition from DELIVERY, query must check deliveryBoyId is null
-      query.deliveryBoyId = null;
-    }
-
-    // Execute update
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-    const updatedOrder = await this.orderModel.findOneAndUpdate(
-      query,
-      updateObj,
-      {
-        new: true,
-      },
-    );
-
-    if (!updatedOrder) {
-      throw new NotFoundException(
-        `Order not found or cannot transition to ${newStatus}`,
+    if (
+      newStatus === 'CANCELLED' &&
+      !transitionRules.CUSTOMER.CANCELLED.includes(order.status)
+    ) {
+      throw new BadRequestException(
+        `Cannot cancel order with status ${order.status}`,
       );
     }
+  } else if (userRole === 'STOREKEEPER') {
+    query.storeId = new Types.ObjectId(userId);
 
-    return updatedOrder;
+    if (!transitionRules.STOREKEEPER[newStatus]?.includes(order.status)) {
+      throw new BadRequestException(
+        `Cannot transition from ${order.status} to ${newStatus}`,
+      );
+    }
+  } else if (userRole === 'DELIVERY') {
+    query.deliveryBoyId = new Types.ObjectId(userId);
+
+    if (
+      newStatus !== 'ACCEPTED' &&
+      !order.deliveryBoyId?.equals(new Types.ObjectId(userId))
+    ) {
+      throw new BadRequestException('Order not assigned to you');
+    }
+
+    if (!transitionRules.DELIVERY[newStatus]?.includes(order.status)) {
+      throw new BadRequestException(
+        `Cannot transition from ${order.status} to ${newStatus}`,
+      );
+    }
   }
+
+  /* ---------------- BASE UPDATE ---------------- */
+
+  let updateObj: Record<string, any> = {
+    $set: { status: newStatus },
+  };
+
+  /* ---------------- RECEIPT GENERATOR 🔥 ---------------- */
+
+  const generateReceiptString = (orderData: any) => {
+    const itemsText = orderData.items
+      .map(
+        (item: any, i: number) =>
+          `${i + 1}. Product: ${item.productId} | Qty: ${item.quantity} | Price: ${item.price}`,
+      )
+      .join(' || ');
+
+    return `
+ORDER RECEIPT
+--------------------------------
+Order ID: ${orderData._id}
+Checkout ID: ${orderData.checkoutId}
+User ID: ${orderData.userId}
+Store ID: ${orderData.storeId}
+
+Items:
+${itemsText}
+
+Subtotal: ₹${orderData.itemsSubtotal}
+Delivery Charge: ₹${orderData.deliveryCharge}
+Total: ₹${orderData.totalAmount}
+
+Payment Method: ${orderData.paymentMethod}
+Payment Status: SUCCESS
+
+Delivery Address:
+${orderData.deliveryAddress.street}, ${orderData.deliveryAddress.city} - ${orderData.deliveryAddress.zipCode}
+Phone: ${orderData.deliveryAddress.phone}
+
+Status: DELIVERED
+Date: ${new Date().toISOString()}
+--------------------------------
+`;
+  };
+
+  /* ---------------- SELF PICKUP LOGIC 🔥 ---------------- */
+
+  if (
+    userRole === 'STOREKEEPER' &&
+    newStatus === 'READY' &&
+    order.paymentMethod === 'SELF_PICKUP'
+  ) {
+    updateObj = {
+      $set: {
+        status: 'DELIVERED',
+        paymentStatus: 'SUCCESS',
+        paidAt: new Date(),
+        amountPaid: order.totalAmount,
+        isPaymentVerified: true,
+        receiptUrl: generateReceiptString(order), // storing string
+      },
+    };
+  }
+
+  /* ---------------- DELIVERY ACCEPT ---------------- */
+
+  if (userRole === 'DELIVERY' && newStatus === 'ACCEPTED') {
+    updateObj.$set.deliveryBoyId = new Types.ObjectId(userId);
+    query.deliveryBoyId = null;
+  }
+
+  /* ---------------- DELIVERY COMPLETION 🔥 ---------------- */
+
+  if (userRole === 'DELIVERY' && newStatus === 'DELIVERED') {
+    updateObj.$set.paymentStatus = 'SUCCESS';
+    updateObj.$set.amountPaid = order.totalAmount;
+    updateObj.$set.paidAt = new Date();
+    updateObj.$set.isPaymentVerified = true;
+
+    updateObj.$set.receiptUrl = generateReceiptString(order);
+  }
+
+  /* ---------------- QUERY STATUS CHECK ---------------- */
+
+  if (userRole !== 'DELIVERY' || newStatus === 'ACCEPTED') {
+    query.status = transitionRules[userRole][newStatus]?.[0] || order.status;
+  } else {
+    query.status = transitionRules.DELIVERY[newStatus]?.[0];
+  }
+
+  /* ---------------- EXECUTE ---------------- */
+
+  const updatedOrder = await this.orderModel.findOneAndUpdate(
+    query,
+    updateObj,
+    { new: true },
+  );
+
+  if (!updatedOrder) {
+    throw new NotFoundException(
+      `Order not found or cannot transition to ${newStatus}`,
+    );
+  }
+
+  return updatedOrder;
+}
 
   /* ================= STOREKEEPER OPERATIONS ================= */
 
