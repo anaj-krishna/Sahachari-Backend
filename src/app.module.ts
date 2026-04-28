@@ -11,6 +11,7 @@ import { DeliveryModule } from './roles/delivery/delivery.module';
 import { S3Module } from './s3/s3.module';
 import { SuperAdminModule } from './roles/superadmin/superadmin.module';
 import { GeminiModule } from './gemini/gemini.module';
+import { PaymentTransactionModule } from './payment/payment-transaction.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { GeminiModule } from './gemini/gemini.module';
     S3Module,
     SuperAdminModule,
     GeminiModule,
+    PaymentTransactionModule,
   ],
 })
 export class AppModule {}
