@@ -12,6 +12,7 @@ import { S3Module } from './s3/s3.module';
 import { SuperAdminModule } from './roles/superadmin/superadmin.module';
 import { GeminiModule } from './gemini/gemini.module';
 import { PaymentTransactionModule } from './payment/payment-transaction.module';
+import { UpiCollectionModule } from './upi/upi-collection.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { PaymentTransactionModule } from './payment/payment-transaction.module';
     SuperAdminModule,
     GeminiModule,
     PaymentTransactionModule,
+    UpiCollectionModule
   ],
 })
 export class AppModule {}

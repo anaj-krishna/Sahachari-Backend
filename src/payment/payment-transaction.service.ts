@@ -5,7 +5,7 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
-import { Model } from "mongoose";
+import { Model,Types } from "mongoose";
 
 import {
   PaymentTransaction,
@@ -25,9 +25,11 @@ export class PaymentTransactionService {
 
   async create(
     dto: CreatePaymentTransactionDto,
+    superAdminId: string,
   ) {
     const created = await this.paymentModel.create({
-      ...dto,
+      ...dto,    
+superAdminId:new Types.ObjectId(superAdminId),
       status: PaymentStatus.PENDING,
     });
 

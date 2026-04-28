@@ -17,8 +17,6 @@ export class CreatePaymentTransactionDto {
   @IsNotEmpty()
   upiId: string;
 
-  @IsMongoId()
-  superAdminId: string;
 
   @IsString()
   @IsNotEmpty()

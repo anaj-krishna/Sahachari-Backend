@@ -8,13 +8,15 @@ import {
   Param,
   Patch,
   Post,
+  Req,UseGuards
 } from "@nestjs/common";
 
 import { PaymentTransactionService } from "./payment-transaction.service";
 import { CreatePaymentTransactionDto } from "./dto/create-payment-transaction.dto";
 import { UpdatePaymentStatusDto } from "./dto/update-payment-status.dto";
-
+import { AuthGuard } from "@nestjs/passport";
 @Controller("payment-transactions")
+@UseGuards(AuthGuard("jwt"))
 export class PaymentTransactionController {
   constructor(
     private readonly paymentService: PaymentTransactionService,
@@ -24,8 +26,10 @@ export class PaymentTransactionController {
   create(
     @Body()
     dto: CreatePaymentTransactionDto,
+    @Req() req,
   ) {
-    return this.paymentService.create(dto);
+    const superAdminId = req.user.userId;
+    return this.paymentService.create(dto,superAdminId);
   }
 
   @Get()

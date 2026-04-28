@@ -9,6 +9,8 @@ import { JwtModule } from '@nestjs/jwt';
 import { OrdersModule } from '../../orders/orders.module';
 import { ProductsModule } from '../../products/products.module';
 import { DeliveryChargesModule } from '../../delivery-charges/delivery-charges.module';
+import { PaymentTransactionModule } from 'src/payment/payment-transaction.module';
+import { UpiCollectionModule } from 'src/upi/upi-collection.module';
 @Module({
   imports: [
     MongooseModule.forFeature([
@@ -19,6 +21,8 @@ import { DeliveryChargesModule } from '../../delivery-charges/delivery-charges.m
     OrdersModule,
     ProductsModule,
     DeliveryChargesModule,
+    PaymentTransactionModule,
+    UpiCollectionModule,
     JwtModule.register({
       secret: process.env.JWT_SECRET || 'superadmin_secret',
       signOptions: { expiresIn: '7d' },
