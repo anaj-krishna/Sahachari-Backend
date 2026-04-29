@@ -32,10 +32,19 @@ export class PaymentTransactionController {
     return this.paymentService.create(dto,superAdminId);
   }
 
-  @Get()
-  findAll() {
-    return this.paymentService.findAll();
-  }
+    @Get()
+    findByDelivery(@Req() req) {
+      const superAdminId = req.user.userId;
+  
+      return this.upiService.findAll(
+        superAdminId,
+      );
+    }
+
+  // @Get()
+  // findAll() {
+  //   return this.paymentService.findAll();
+  // }
 
   @Get(":checkoutId")
   findByCheckoutId(

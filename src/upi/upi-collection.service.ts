@@ -30,12 +30,12 @@ export class UpiCollectionService {
     });
   }
 
-  async findAll(superAdminId: string) {
-    return this.upiModel.find({
-      superAdminId,
-    });
-  }
-
+ async findAll(superAdminId: string) {
+  return this.upiModel.find({
+    superAdminId: new Types.ObjectId(superAdminId),
+  });
+}
+   
   async delete(id: string) {
     const deleted =
       await this.upiModel.findByIdAndDelete(id);

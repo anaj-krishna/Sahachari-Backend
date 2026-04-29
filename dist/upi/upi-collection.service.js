@@ -30,7 +30,7 @@ let UpiCollectionService = class UpiCollectionService {
     }
     async findAll(superAdminId) {
         return this.upiModel.find({
-            superAdminId,
+            superAdminId: new mongoose_2.Types.ObjectId(superAdminId),
         });
     }
     async delete(id) {

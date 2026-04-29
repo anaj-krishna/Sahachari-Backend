@@ -42,6 +42,11 @@ superAdminId:new Types.ObjectId(superAdminId),
       .sort({ createdAt: -1 })
       .populate("superAdminId");
   }
+   async findByDelivery(superAdminId: string) {
+    return this.paymentModel.find({
+      superAdminId: new Types.ObjectId(superAdminId),
+    });
+  }
 
   async findByCheckoutId(
     checkoutId: string,
