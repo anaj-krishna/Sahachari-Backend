@@ -36,6 +36,11 @@ let PaymentTransactionService = class PaymentTransactionService {
             .sort({ createdAt: -1 })
             .populate("superAdminId");
     }
+    async findByDelivery(superAdminId) {
+        return this.paymentModel.find({
+            superAdminId: new mongoose_2.Types.ObjectId(superAdminId),
+        });
+    }
     async findByCheckoutId(checkoutId) {
         const payment = await this.paymentModel.findOne({
             checkoutId,

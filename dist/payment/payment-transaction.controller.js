@@ -27,8 +27,9 @@ let PaymentTransactionController = class PaymentTransactionController {
         const superAdminId = req.user.userId;
         return this.paymentService.create(dto, superAdminId);
     }
-    findAll() {
-        return this.paymentService.findAll();
+    findByDelivery(req) {
+        const superAdminId = req.user.userId;
+        return this.paymentService.findByDelivery(superAdminId);
     }
     findByCheckoutId(checkoutId) {
         return this.paymentService.findByCheckoutId(checkoutId);
@@ -51,10 +52,11 @@ __decorate([
 ], PaymentTransactionController.prototype, "create", null);
 __decorate([
     (0, common_1.Get)(),
+    __param(0, (0, common_1.Req)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", []),
+    __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", void 0)
-], PaymentTransactionController.prototype, "findAll", null);
+], PaymentTransactionController.prototype, "findByDelivery", null);
 __decorate([
     (0, common_1.Get)(":checkoutId"),
     __param(0, (0, common_1.Param)("checkoutId")),

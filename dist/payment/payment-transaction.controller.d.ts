@@ -19,7 +19,7 @@ export declare class PaymentTransactionController {
     } & Required<{
         _id: import("mongoose").Types.ObjectId;
     }>>;
-    findAll(): Promise<(import("mongoose").Document<unknown, {}, import("mongoose").Document<unknown, {}, import("./payment-transaction.schema").PaymentTransaction, {}, import("mongoose").DefaultSchemaOptions> & import("./payment-transaction.schema").PaymentTransaction & {
+    findByDelivery(req: any): Promise<(import("mongoose").Document<unknown, {}, import("mongoose").Document<unknown, {}, import("./payment-transaction.schema").PaymentTransaction, {}, import("mongoose").DefaultSchemaOptions> & import("./payment-transaction.schema").PaymentTransaction & {
         _id: import("mongoose").Types.ObjectId;
     } & {
         __v: number;

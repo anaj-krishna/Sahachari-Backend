@@ -35,6 +35,21 @@ export declare class PaymentTransactionService {
     } & Required<{
         _id: Types.ObjectId;
     }>)[]>;
+    findByDelivery(superAdminId: string): Promise<(import("mongoose").Document<unknown, {}, import("mongoose").Document<unknown, {}, PaymentTransaction, {}, import("mongoose").DefaultSchemaOptions> & PaymentTransaction & {
+        _id: Types.ObjectId;
+    } & {
+        __v: number;
+    } & {
+        id: string;
+    }, {}, import("mongoose").DefaultSchemaOptions> & import("mongoose").Document<unknown, {}, PaymentTransaction, {}, import("mongoose").DefaultSchemaOptions> & PaymentTransaction & {
+        _id: Types.ObjectId;
+    } & {
+        __v: number;
+    } & {
+        id: string;
+    } & Required<{
+        _id: Types.ObjectId;
+    }>)[]>;
     findByCheckoutId(checkoutId: string): Promise<import("mongoose").Document<unknown, {}, import("mongoose").Document<unknown, {}, PaymentTransaction, {}, import("mongoose").DefaultSchemaOptions> & PaymentTransaction & {
         _id: Types.ObjectId;
     } & {

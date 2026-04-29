@@ -36,9 +36,7 @@ export class PaymentTransactionController {
     findByDelivery(@Req() req) {
       const superAdminId = req.user.userId;
   
-      return this.upiService.findAll(
-        superAdminId,
-      );
+      return this.paymentService.findByDelivery(superAdminId);
     }
 
   // @Get()
